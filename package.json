@@ -15,6 +15,7 @@
     "magnet-uri": "~1.0.0",
     "bittorrent-tracker": "~0.0.1",
     "bittorrent-protocol": "~0.7.1",
+    "bittorrent-swarm": "~0.7.0",
     "inherits": "~2.0.1"
   },
   "devDependencies": {
