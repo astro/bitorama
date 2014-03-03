@@ -19,10 +19,7 @@ inherits(MetadataDownloader, process.EventEmitter);
 
 MetadataDownloader.prototype._onWire = function(wire) {
     var metadata = new MetadataExtension(wire);
-    /* TODO: add metadataSize to ext handshake */
     metadata.on('enabled', function(metadataSize) {
-        // console.log(wire.remoteAddress, "enabled");
-
         /* Seeding metadata */
         metadata.on('request', function(info) {
             if (wire.amChoking) {
@@ -34,11 +31,20 @@ MetadataDownloader.prototype._onWire = function(wire) {
                 this.pieces[info.piece] &&
                 this.pieces[info.piece].data) {
 
-                metadata.data(info.piece, this.pieces[info.piece].data);
+                console.log("Sending metadata piece", info.piece);
+                metadata.data(info.piece, this.pieces[info.piece].data, this.size);
             } else {
+                console.log("Rejecting metadata piece", info.piece);
                 metadata.reject(info.piece);
             }
-        });
+        }.bind(this));
+        wire.on('extended-handshake', function(info) {
+            if (typeof this.size === 'number') {
+                /* Include size in outgoing extended hanshake as per
+                 * BEP-0009 */
+                info.metadata_size = this.size;
+            }
+        }.bind(this));
 
         /* Leeching metadata */
         if (this.complete) {
@@ -164,15 +170,15 @@ MetadataDownloader.prototype.checkHashes = function() {
         }
         var sum = sha1sum.digest('hex');
         if (sum === this.infoHash) {
-            var info;
+            var buf, info;
             try {
-                info = bncode.decode(
-                        Buffer.concat(
-                            this.pieces.slice(0, pieceAmount).
-                                map(function(piece){
-                                    return piece.data;
-                                })
-                        ));
+                buf = Buffer.concat(
+                    this.pieces.slice(0, pieceAmount).
+                    map(function(piece){
+                        return piece.data;
+                    }));
+                info = bncode.decode(buf);
+                this.size = buf.length;
             } catch (e) {
                 console.warn(e.stack);
             }
