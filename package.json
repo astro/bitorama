@@ -1,0 +1,36 @@
+{
+  "name": "bitorama",
+  "description": "BitTorrent on node.js",
+  "version": "0.0.0",
+  "author": {
+    "name": "Astro",
+    "email": "astro@spaceboyz.net",
+    "url": "http://spaceboyz.net/~astro/"
+  },
+  "bugs": {
+    "url": "https://github.com/astro/bitorama/issues"
+  },
+  "dependencies": {
+    "bncode": "~0.5.0",
+    "magnet-uri": "~1.0.0",
+    "bittorrent-tracker": "~0.0.1",
+    "bittorrent-protocol": "~0.7.1",
+    "inherits": "~2.0.1"
+  },
+  "devDependencies": {
+    "tape": "2.x"
+  },
+  "keywords": [
+    "torrent",
+    "bittorrent"
+  ],
+  "license": "MIT",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/astro/bitorama.git"
+  },
+  "scripts": {
+    "test": "tape test/*.js"
+  }
+}
