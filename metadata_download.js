@@ -22,11 +22,6 @@ MetadataDownloader.prototype._onWire = function(wire) {
     metadata.on('enabled', function(metadataSize) {
         /* Seeding metadata */
         metadata.on('request', function(info) {
-            if (wire.amChoking) {
-                /* Ignore everything */
-                return;
-            }
-        
             if (typeof info.piece === 'number' &&
                 this.pieces[info.piece] &&
                 this.pieces[info.piece].data) {
@@ -51,23 +46,11 @@ MetadataDownloader.prototype._onWire = function(wire) {
             /* Nothing to do, could leech & seed actual data */
             return;
         }
-        wire.interested();
-        var uninterested = function() {
-            console.log("now uninterested in", wire.remoteAddress);
-            wire.uninterested();
-        };
-        this.on('complete', uninterested);
-        wire.on('end', function() {
-            this.removeListener('complete', uninterested);
-        }.bind(this));
-        
 
         if (this.sizes.indexOf(metadataSize) < 0)
             this.sizes.push(metadataSize);
 
-        wire.on('unchoke', function() {
-            this.canRequest(wire.remoteAddress, metadata);
-        }.bind(this));
+        this.canRequest(wire.remoteAddress, metadata);
 
         metadata.on('data', function(info, data) {
             console.log("metadata data", info, data.length);
