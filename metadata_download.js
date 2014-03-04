@@ -7,6 +7,7 @@ module.exports = MetadataDownloader;
 
 var CHUNK_SIZE = 16384;
 
+// TODO: construct with info when loading .torrent
 function MetadataDownloader(infoHash, swarm) {
     this.infoHash = infoHash;
     this.complete = false;
@@ -22,16 +23,22 @@ MetadataDownloader.prototype._onWire = function(wire) {
     metadata.on('enabled', function(metadataSize) {
         /* Seeding metadata */
         metadata.on('request', function(info) {
-            if (typeof info.piece === 'number' &&
-                this.pieces[info.piece] &&
-                this.pieces[info.piece].data) {
+            if (typeof info.piece === 'number')
+                if (this.complete && this.info) {
+                    var offset = info.piece * CHUNK_SIZE;
+                    var buf = bncode.encode(this.info).
+                        slice(offset, offset + CHUNK_SIZE);
+                    console.log("Sending complete metadata piece", info.piece);
+                    metadata.data(info.piece, buf, this.size);
+                } else if (this.pieces[info.piece] &&
+                    this.pieces[info.piece].data) {
 
-                console.log("Sending metadata piece", info.piece);
-                metadata.data(info.piece, this.pieces[info.piece].data, this.size);
-            } else {
-                console.log("Rejecting metadata piece", info.piece);
-                metadata.reject(info.piece);
-            }
+                    console.log("Sending metadata piece", info.piece);
+                    metadata.data(info.piece, this.pieces[info.piece].data, this.size);
+                } else {
+                    console.log("Rejecting metadata piece", info.piece);
+                    metadata.reject(info.piece);
+                }
         }.bind(this));
         wire.on('extended-handshake', function(info) {
             if (typeof this.size === 'number') {
@@ -53,7 +60,11 @@ MetadataDownloader.prototype._onWire = function(wire) {
         this.canRequest(wire.remoteAddress, metadata);
 
         metadata.on('data', function(info, data) {
-            console.log("metadata data", info, data.length);
+            if (this.complete) {
+                /* Just excess, ignore */
+                return;
+            }
+
             if (info && typeof info.piece === 'number') {
                 console.log("set metadata", info.piece);
                 this.pieces[info.piece].data = data;
@@ -141,7 +152,6 @@ MetadataDownloader.prototype.checkHashes = function() {
         for(j = 0; continuous && j < pieceAmount; j++) {
             continuous = this.pieces[j] && !!this.pieces[j].data;
         }
-        console.log("size is continuous", size, pieceAmount, continuous);
         if (!continuous) {
             allContinuous = false;
             continue;
@@ -185,5 +195,6 @@ MetadataDownloader.prototype.checkHashes = function() {
 
 MetadataDownloader.prototype.onComplete = function(info) {
     this.complete = true;
+    this.info = info;
     this.emit('complete', info);
 };
