@@ -14,7 +14,8 @@
     "bncode": "~0.5.0",
     "magnet-uri": "~1.0.0",
     "bittorrent-tracker": "~0.0.1",
-    "bittorrent-protocol": "~0.7.1",
+    "bittorrent-protocol": "git://github.com/astro/bittorrent-protocol.git",
+    "bittorrent-tracker": "git://github.com/astro/bittorrent-tracker.git",
     "bittorrent-swarm": "~0.7.0",
     "inherits": "~2.0.1"
   },
