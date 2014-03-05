@@ -58,37 +58,37 @@ MetadataDownloader.prototype._onWire = function(wire) {
             this.sizes.push(metadataSize);
 
         this.canRequest(wire.remoteAddress, metadata);
+    }.bind(this));
 
-        metadata.on('data', function(info, data) {
-            if (this.complete) {
-                /* Just excess, ignore */
-                return;
-            }
+    metadata.on('data', function(info, data) {
+        if (this.complete) {
+            /* Just excess, ignore */
+            return;
+        }
 
-            if (info && typeof info.piece === 'number') {
-                console.log("set metadata", info.piece);
-                this.pieces[info.piece].data = data;
-                this.pieces[info.piece].blacklist.push(wire.remoteAddress);
+        if (info && typeof info.piece === 'number') {
+            this.pieces[info.piece].data = data;
+            this.pieces[info.piece].blacklist.push(wire.remoteAddress);
             
-                this.checkHashes();
-            }
+            this.checkHashes();
+        }
 
-            this.canRequest(wire.remoteAddress, metadata);
-        }.bind(this));
-        metadata.on('reject', function(info, data) {
-            if (info && typeof info.piece === 'number') {
-                if (!this.pieces[info.piece]) {
-                    /* Weird, we didn't request that one. Anyhow: */
-                    this.pieces[info.piece] = {
-                        number: i,
-                        blacklist: []
-                    };
-                }
-                this.pieces[info.piece].blacklist.push(wire.remoteAddress);
+        this.canRequest(wire.remoteAddress, metadata);
+    }.bind(this));
+
+    metadata.on('reject', function(info, data) {
+        if (info && typeof info.piece === 'number') {
+            if (!this.pieces[info.piece]) {
+                /* Weird, we didn't request that one. Anyhow: */
+                this.pieces[info.piece] = {
+                    number: i,
+                    blacklist: []
+                };
             }
-            
-            this.canRequest(wire.remoteAddress, metadata);
-        }.bind(this));
+            this.pieces[info.piece].blacklist.push(wire.remoteAddress);
+        }
+        
+        this.canRequest(wire.remoteAddress, metadata);
     }.bind(this));
 };
 
