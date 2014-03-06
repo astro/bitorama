@@ -10,7 +10,7 @@ function infoToFiles(info, infoHash) {
     if (typeof info.length === 'number') {
         /* Single-file torrent */
         return [{
-            path: [name],
+            path: name,
             length: info.length
         }];
     } else if (Array.isArray(info.files)) {
@@ -20,7 +20,7 @@ function infoToFiles(info, infoHash) {
                 return buf.toString();
             }).filter(isValidPath);
             return {
-                path: [name].concat(path),
+                path: [name].concat(path).join("/"),
                 length: file.length
             };
         });

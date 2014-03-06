@@ -11,7 +11,7 @@ test('single-file torrent', function (t) {
   files = infoToFiles(info);
 
   t.equal(files.length, 1);
-  t.deepEquals(files[0].path, ["fnord"]);
+  t.deepEquals(files[0].path, "fnord");
   t.equal(files[0].length, 23);
 });
 
@@ -31,13 +31,13 @@ test('multi-file torrent', function (t) {
           length: 42
       }]
   };
-  files = infoToFiles(info);
+  var files = infoToFiles(info);
 
   t.equal(files.length, 3);
-  t.deepEquals(files[0].path, ["fnord", "a", "b"]);
+  t.deepEquals(files[0].path, "fnord/a/b");
   t.equal(files[0].length, 23);
-  t.deepEquals(files[1].path, ["fnord", "a", "c"]);
+  t.deepEquals(files[1].path, "fnord/a/c");
   t.equal(files[1].length, 5);
-  t.deepEquals(files[2].path, ["fnord", "d", "e"]);
+  t.deepEquals(files[2].path, "fnord/d/e");
   t.equal(files[2].length, 42);
 });

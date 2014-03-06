@@ -1,7 +1,7 @@
 module.exports = FileStorage;
 
 /**
- * @param files [{ path: [String], length: Number }]
+ * @param files [{ path: String, length: Number }]
  **/
 function FileStorage(files) {
     this.files = files;
@@ -31,7 +31,7 @@ FileStorage.prototype.fileToOffset = function(path, offset) {
     var totalOffset = 0;
     for(var i = 0; i < this.files.length; i++) {
         var file = this.files[i];
-        if (arrayEq(file.path, path)) {
+        if (file.path === path) {
             if (offset <= file.length) {
                 return totalOffset + offset;
             } else {
