@@ -1,5 +1,7 @@
 var FileStorage = require('../file_storage')
 var test = require('tape')
+var fs = require('fs')
+var exec = require('child_process').exec
 
 test('offsetToRanges (1 file)', function (t) {
   t.plan(2);
@@ -84,3 +86,63 @@ test('fileToOffset (3 files)', function (t) {
 });
 
 
+test('FileStorage state', function (t) {
+    t.plan(6);
+
+    var base = __dirname + "/data/storage-1/";
+    var storage = new FileStorage([{
+        path: base + "abc.txt",
+        length: 3
+    }, {
+        path: base + "hello_world.txt",
+        length: 11
+    }, {
+        path: base + "xyz.txt",
+        length: 3
+    }]);
+
+    function rfs(name) {
+        return fs.readFileSync(base + name, { encoding: "utf8" });
+    }
+    storage.write(0, new Buffer("abcHello "), function(err) {
+        if (err) {
+            t.fail(err);
+        }
+        t.equals(rfs("abc.txt"), "abc");
+
+        storage.read(0, 3, function(err, data) {
+            if (err) {
+                t.fail(err);
+            }
+            t.equals(data.toString(), "abc");
+
+            done();
+        });
+    });
+    storage.write(9, new Buffer("Worldxyz"), function(err) {
+        if (err) {
+            t.fail(err);
+        }
+        t.equals(rfs("hello_world.txt"), "Hello World");
+        t.equals(rfs("xyz.txt"), "xyz");
+
+        storage.read(11, 6, function(err, data) {
+            if (err) {
+                t.fail(err);
+            }
+            t.equals(data.toString(), "rldxyz");
+
+            done();
+        });
+    });
+
+    var pending = 2;
+    function done() {
+        pending--;
+        if (pending < 1) {
+            exec("rm -r " + base, function() {
+                t.ok(true, "cleanup");
+            });
+        }
+    }
+});
