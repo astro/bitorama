@@ -8,14 +8,15 @@ module.exports = DataDownload;
 function DataDownload(pieceLength, totalLength) {
     this.pieceLength = pieceLength;
     this.totalLength = totalLength;
+    /* Ordered by priority */
     this.pieces = [];
-    this.valid = {};
 }
 
 DataDownload.prototype.addPiece = function(index) {
     if (this.pieces.some(function(piece) {
         return piece.number === index;
     })) {
+        console.log("already added piece", index);
         return false;
     }
 
@@ -23,11 +24,38 @@ DataDownload.prototype.addPiece = function(index) {
     var length = Math.min(this.pieceLength, this.totalLength - pieceOffset);
     var piece = new DataPiece(index, length);
     this.pieces.push(piece);
+    console.log("added piece", index);
     return true;
 };
 
+DataDownload.prototype.removePiece = function(index) {
+    this.pieces = this.pieces.filter(function(piece) {
+        return piece.number !== index;
+    });
+};
+
+DataDownload.prototype.getPiece = function(index) {
+    for(var i = 0; i < this.pieces.length; i++) {
+        if (this.pieces[i].piece === index) {
+            return this.pieces[i];
+        }
+    }
+    return null;
+};
+
+DataDownload.prototype.isDownloadingPiece = function(index) {
+    return !!this.getPiece(index);
+};
+
+DataDownload.prototype.onDownloaded = function(chunk) {
+    chunk.state = 'downloaded';
+};
+
+DataDownload.prototype.onError = function(chunk) {
+    chunk.state = 'missing';
+};
+
 DataDownload.prototype.onComplete = function(index) {
-    this.valid[index] = true;
     this.pieces = this.pieces.filter(function(piece) {
         return piece.number !== index;
     });

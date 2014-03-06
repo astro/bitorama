@@ -60,7 +60,9 @@ DataValidator.prototype._checkCompleteness = function() {
  * Per-piece tracking
  **/
 function PieceValidator(expectedSha1, pieceLength) {
-    this.expectedSha1 = expectedSha1;
+    this.expectedSha1 = Buffer.isBuffer(expectedSha1) ?
+        expectedSha1.toString('hex') :
+        expectedSha1;
     this.pieceLength = pieceLength;
     this.sha1pos = 0;
 }

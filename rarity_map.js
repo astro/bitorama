@@ -36,11 +36,17 @@ RarityMap.prototype._recalculateAll = function() {
             }
         }
     }.bind(this));
+    // console.log("rarity", this.swarm.wires.length, "wires", this.rarity.join(","));
 };
 
 RarityMap.prototype.findRarest = function(pieceFilter) {
     var i, candidates = [], min;
     for(i = 0; i < this.rarity.length; i++) {
+        if (pieceFilter && !pieceFilter(i)) {
+            /* Not acceptable, skip */
+            continue;
+        }
+
         var match;
         if (typeof min !== 'number' || this.rarity[i] < min) {
             candidates = [i];
@@ -49,6 +55,7 @@ RarityMap.prototype.findRarest = function(pieceFilter) {
             candidates.push(i);
         }
     }
+    // console.log("rarity min:", min, "candidates:", candidates.join(","));
     if (candidates.length > 0) {
         i = Math.floor(candidates.length * Math.random());
         return candidates[i];

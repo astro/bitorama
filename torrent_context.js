@@ -71,9 +71,16 @@ TorrentContext.prototype._onInfo = function(info) {
         totalLength += file.length;
     });
 
-    this.validator = new DataValidator(sha1sums, pieceLength, totalLength);
     this.rarity = new RarityMap(this.swarm);
     this.download = new DataDownload(pieceLength, totalLength);
+    this.validator = new DataValidator(sha1sums, pieceLength, totalLength);
+    this.validator.on('piece:complete', function(index) {
+        console.warn("Piece", index, "complete");
+        this.download.removePiece(index);
+    }.bind(this));
+    this.validator.on('piece:corrupt', function(index) {
+        console.warn("Piece", index, "corrupt, must retry...");
+    });
 
     this.swarm.wires.forEach(function(wire) {
         wire.on('bitfield', function() {
@@ -88,7 +95,34 @@ TorrentContext.prototype._onInfo = function(info) {
             this._canRequest(wire);
         }.bind(this));
         this._canRequest(wire);
+
+        wire.on('end', function() {
+            wire.requests.forEach(function(req) {
+                this.download.onError({
+                    piece: req.index,
+                    offset: req.offset,
+                    length: req.length
+                });
+            });
+        }.bind(this));
     }.bind(this));
+
+    setInterval(function() {
+        this.download.pieces.forEach(function(piece) {
+            var requested = 0, downloaded = 0, total = 0;
+            piece.chunks.forEach(function(chunk) {
+                total += chunk.length;
+                if (chunk.state === 'requested')
+                    requested += chunk.length;
+                else if (chunk.state === 'downloaded')
+                    downloaded += chunk.length;
+            });
+            function p(l) {
+                return Math.floor(100 * l / total) + "%";
+            }
+            console.log(piece.number + ":", p(requested), "requested", p(downloaded), "downloaded");
+        });
+    }.bind(this), 1000);
 };
 
 TorrentContext.prototype._canInterest = function(wire) {
@@ -108,7 +142,7 @@ TorrentContext.prototype._canInterest = function(wire) {
 };
 
 TorrentContext.prototype._canRequest = function(wire) {
-    var minReqs = 2, maxReqs = Math.max(minReqs, 10);
+    var minReqs = 4, maxReqs = Math.max(minReqs, 16);
 
     if (wire.peerChoking || wire.requests.length >= minReqs) {
         return;
@@ -116,19 +150,28 @@ TorrentContext.prototype._canRequest = function(wire) {
     console.log("_canRequest", wire.remoteAddress);
 
     var pieceFilter = function(index) {
-        // TODO: + not already requested
         return wire.peerPieces[index] &&
-            !this.validator.isPieceComplete(index);
+            !this.validator.isPieceComplete(index) &&
+            !this.download.isDownloadingPiece(index);
     }.bind(this);
 
     var needMore = true;
     while(needMore) {
         var chunks = this.download.nextToDownload(wire, maxReqs - wire.requests.length);
+        console.log(wire.remoteAddress, "will be requested with", chunks.length, "chunks");
         chunks.forEach(function(chunk) {
-            console.log(wire.remoteAddress, "request", chunk);
+            console.log(wire.remoteAddress, "request", chunk.piece, ":", chunk.offset, "+", chunk.length);
             wire.request(chunk.piece, chunk.offset, chunk.length, function(error, data) {
-                console.log("request cb", arguments);
-                this._canRequest(wire);
+                if (error) {
+                    console.warn(wire.remoteAddress, "cb", error.message);
+                    this.download.onError(chunk);
+                } else {
+                    console.warn(wire.remoteAddress, "cb", data.length);
+                    this.download.onDownloaded(chunk);
+                    // TODO: store
+                    this.validator.onData(chunk.piece, chunk.offset, data);
+                    this._canRequest(wire);
+                }
             }.bind(this));
         }.bind(this));
 
@@ -137,8 +180,10 @@ TorrentContext.prototype._canRequest = function(wire) {
             var index = this.rarity.findRarest(pieceFilter);
             if (typeof index === 'number') {
                 this.download.addPiece(index);
+                console.log("needed more, added piece", index);
             } else {
                 /* Nothing left, TODO: go piece stealing */
+                console.log("needed more but nothing left");
                 needMore = false;
             }
         }
