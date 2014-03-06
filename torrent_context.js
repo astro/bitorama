@@ -120,7 +120,7 @@ TorrentContext.prototype._onInfo = function(info) {
             function p(l) {
                 return Math.floor(100 * l / total) + "%";
             }
-            console.log(piece.number + ":", p(requested), "requested", p(downloaded), "downloaded");
+            console.log(piece.index + ":", p(requested), "requested", p(downloaded), "downloaded");
         });
     }.bind(this), 1000);
 };
@@ -160,8 +160,8 @@ TorrentContext.prototype._canRequest = function(wire) {
         var chunks = this.download.nextToDownload(wire, maxReqs - wire.requests.length);
         console.log(wire.remoteAddress, "will be requested with", chunks.length, "chunks");
         chunks.forEach(function(chunk) {
-            console.log(wire.remoteAddress, "request", chunk.piece, ":", chunk.offset, "+", chunk.length);
-            wire.request(chunk.piece, chunk.offset, chunk.length, function(error, data) {
+            console.log(wire.remoteAddress, "request", chunk.index, ":", chunk.offset, "+", chunk.length);
+            wire.request(chunk.index, chunk.offset, chunk.length, function(error, data) {
                 if (error) {
                     console.warn(wire.remoteAddress, "cb", error.message);
                     this.download.onError(chunk);
@@ -169,7 +169,7 @@ TorrentContext.prototype._canRequest = function(wire) {
                     console.warn(wire.remoteAddress, "cb", data.length);
                     this.download.onDownloaded(chunk);
                     // TODO: store
-                    this.validator.onData(chunk.piece, chunk.offset, data);
+                    this.validator.onData(chunk.index, chunk.offset, data);
                     this._canRequest(wire);
                 }
             }.bind(this));
@@ -179,8 +179,12 @@ TorrentContext.prototype._canRequest = function(wire) {
         if (needMore) {
             var index = this.rarity.findRarest(pieceFilter);
             if (typeof index === 'number') {
-                this.download.addPiece(index);
-                console.log("needed more, added piece", index);
+                if (this.download.addPiece(index)) {
+                    console.log("needed more, added piece", index);
+                } else {
+                    console.log("is already downloading", index, ":", this.download.getPiece(index));
+                    needMore = false;
+                }
             } else {
                 /* Nothing left, TODO: go piece stealing */
                 console.log("needed more but nothing left");

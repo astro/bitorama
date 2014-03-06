@@ -14,7 +14,7 @@ function DataDownload(pieceLength, totalLength) {
 
 DataDownload.prototype.addPiece = function(index) {
     if (this.pieces.some(function(piece) {
-        return piece.number === index;
+        return piece.index === index;
     })) {
         console.log("already added piece", index);
         return false;
@@ -30,13 +30,13 @@ DataDownload.prototype.addPiece = function(index) {
 
 DataDownload.prototype.removePiece = function(index) {
     this.pieces = this.pieces.filter(function(piece) {
-        return piece.number !== index;
+        return piece.index !== index;
     });
 };
 
 DataDownload.prototype.getPiece = function(index) {
     for(var i = 0; i < this.pieces.length; i++) {
-        if (this.pieces[i].piece === index) {
+        if (this.pieces[i].index === index) {
             return this.pieces[i];
         }
     }
@@ -57,7 +57,7 @@ DataDownload.prototype.onError = function(chunk) {
 
 DataDownload.prototype.onComplete = function(index) {
     this.pieces = this.pieces.filter(function(piece) {
-        return piece.number !== index;
+        return piece.index !== index;
     });
 };
 
@@ -70,7 +70,7 @@ DataDownload.prototype.nextToDownload = function(wire, amount) {
         var piece = this.pieces[i];
         var pieceResults = piece.nextToDownload(wire, amount - result.length).
                 map(function(chunk) {
-                    chunk.piece = i;
+                    chunk.index = piece.index;
                     return chunk;
                 });
         if (pieceResults.length > 0) {
@@ -80,8 +80,8 @@ DataDownload.prototype.nextToDownload = function(wire, amount) {
     return result;
 };
 
-function DataPiece(number, length) {
-    this.number = number;
+function DataPiece(index, length) {
+    this.index = index;
     this.complete = false;
     this.chunks = [];
     for(var offset = 0; offset < length; offset += CHUNK_SIZE) {
@@ -96,7 +96,7 @@ function DataPiece(number, length) {
 }
 
 DataPiece.prototype.nextToDownload = function(wire, amount) {
-    if (this.complete || !wire.peerPieces[this.number]) {
+    if (this.complete || !wire.peerPieces[this.index]) {
         return [];
     }
 
@@ -105,7 +105,7 @@ DataPiece.prototype.nextToDownload = function(wire, amount) {
         var chunk = this.chunks[i];
         /* TODO: have previously requested timeout */
         if (chunk.state === 'missing' &&
-            wire.peerPieces[this.number]) {
+            wire.peerPieces[this.index]) {
 
             chunk.state = 'requested';
             chunk.requestedBy[wire.remoteAddress] = Date.now();
