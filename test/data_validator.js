@@ -5,7 +5,7 @@ SHA1_65536NULLBYTES = "1adc95bebe9eea8c112d40cd04ab7a8d75c4f961";
 SHA1_512NULLBYTES = "5c3eb80066420002bc3dcc7ca4ab6efad7ed4ae5";
 
 test('completes hashing by itself', function (t) {
-  t.plan(3);
+  t.plan(6);
 
   var nullBytes = new Buffer(512);
   nullBytes.fill(0);
@@ -19,6 +19,7 @@ test('completes hashing by itself', function (t) {
       validator.onData(index, offset, nullBytes);
   });
   validator.on('piece:complete', function(index) {
+      t.assert(true, validator.isPieceComplete(index));
       t.ok(index === 0 ||
            index === 1 ||
            index === 2,

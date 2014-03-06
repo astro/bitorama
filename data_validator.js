@@ -33,6 +33,10 @@ function DataValidator(sha1sums, pieceLength, totalLength) {
 }
 inherits(DataValidator, process.EventEmitter);
 
+DataValidator.prototype.isPieceComplete = function(index) {
+    return this.pieces[index].complete;
+};
+
 DataValidator.prototype.onData = function(index, offset, buffer) {
     var piece;
     if ((piece = this.pieces[index])) {

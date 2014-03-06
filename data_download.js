@@ -1,22 +1,36 @@
 var CHUNK_SIZE = 16384;
 
+module.exports = DataDownload;
+
+/**
+ * Tracks pieces that are currently in progress
+ **/
 function DataDownload(pieceLength, totalLength) {
     this.pieceLength = pieceLength;
     this.totalLength = totalLength;
     this.pieces = [];
+    this.valid = {};
 }
 
 DataDownload.prototype.addPiece = function(index) {
     if (this.pieces.some(function(piece) {
         return piece.number === index;
     })) {
-        return;
+        return false;
     }
 
     var pieceOffset = index * this.pieceLength;
     var length = Math.min(this.pieceLength, this.totalLength - pieceOffset);
     var piece = new DataPiece(index, length);
     this.pieces.push(piece);
+    return true;
+};
+
+DataDownload.prototype.onComplete = function(index) {
+    this.valid[index] = true;
+    this.pieces = this.pieces.filter(function(piece) {
+        return piece.number !== index;
+    });
 };
 
 /**
@@ -25,8 +39,12 @@ DataDownload.prototype.addPiece = function(index) {
 DataDownload.prototype.nextToDownload = function(wire, amount) {
     var result = [];
     for(var i = 0; result.length < amount && i < this.pieces.length; i++) {
-        var piece = this.piece;
-        var pieceResults = piece.nextToDownload(wire, amount - result.length);
+        var piece = this.pieces[i];
+        var pieceResults = piece.nextToDownload(wire, amount - result.length).
+                map(function(chunk) {
+                    chunk.piece = i;
+                    return chunk;
+                });
         if (pieceResults.length > 0) {
             result = result.concat(pieceResults);
         }
@@ -57,11 +75,12 @@ DataPiece.prototype.nextToDownload = function(wire, amount) {
     var result = [];
     for(var i = 0; result.length < amount && i < this.chunks.length; i++) {
         var chunk = this.chunks[i];
+        /* TODO: have previously requested timeout */
         if (chunk.state === 'missing' &&
             wire.peerPieces[this.number]) {
 
             chunk.state = 'requested';
-            chunk.requestedBy[wireAddress] = Date.now();
+            chunk.requestedBy[wire.remoteAddress] = Date.now();
             result.push(chunk);
         }
     }
