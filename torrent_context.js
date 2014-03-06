@@ -77,6 +77,7 @@ TorrentContext.prototype._onInfo = function(info) {
     this.validator.on('piece:complete', function(index) {
         console.warn("Piece", index, "complete");
         this.download.removePiece(index);
+        this.swarm.wires.forEach(this._canInterest.bind(this));
     }.bind(this));
     this.validator.on('piece:corrupt', function(index) {
         console.warn("Piece", index, "corrupt, must retry...");
