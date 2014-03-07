@@ -60,6 +60,13 @@ DataDownload.prototype.onError = function(chunk) {
     chunk.state = 'missing';
 };
 
+DataDownload.prototype.pieceCorrupted = function(index) {
+    var piece;
+    if ((piece = this.getPiece(index))) {
+        piece.pieceCorrupted();
+    }
+};
+
 DataDownload.prototype.onComplete = function(index) {
     this.pieces = this.pieces.filter(function(piece) {
         return piece.index !== index;
@@ -152,4 +159,13 @@ DataPiece.prototype.getValidateableRange = function(offset) {
 DataPiece.prototype.onComplete = function(wire, amount) {
     this.complete = true;
     delete this.chunks;
+};
+
+DataPiece.prototype.pieceCorrupted = function(index) {
+    for(var i = 0; i < this.chunks.length; i++) {
+        var chunk = this.chunks[i];
+        if (chunk.state === 'downloaded') {
+            chunk.state = 'missing';
+        }
+    }
 };

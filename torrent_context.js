@@ -100,7 +100,8 @@ TorrentContext.prototype._onInfo = function(info) {
     }.bind(this));
     this.validator.on('piece:corrupt', function(index) {
         console.warn("Piece", index, "corrupt, must retry...");
-    });
+        this.download.pieceCorrupted(index);
+    }.bind(this));
 
     var setupWire = function(wire) {
         /* Send bitfield */
