@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "bncode": "~0.5.0",
-    "magnet-uri": "git://github.com/astro/magnet-uri.git",
+    "magnet-uri": "~1.1.0",
     "bittorrent-tracker": "~0.0.1",
     "bittorrent-protocol": "git://github.com/astro/bittorrent-protocol.git",
     "bittorrent-tracker": "git://github.com/astro/bittorrent-tracker.git",
