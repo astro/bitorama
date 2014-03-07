@@ -23,6 +23,7 @@ DataDownload.prototype.addPiece = function(index) {
     var pieceOffset = index * this.pieceLength;
     var length = Math.min(this.pieceLength, this.totalLength - pieceOffset);
     var piece = new DataPiece(index, length);
+    piece.started = Date.now();
     this.pieces.push(piece);
     console.log("added piece", index);
     return true;
@@ -45,6 +46,10 @@ DataDownload.prototype.getPiece = function(index) {
 
 DataDownload.prototype.isDownloadingPiece = function(index) {
     return !!this.getPiece(index);
+};
+
+DataDownload.prototype.getValidateableRange = function(index, offset) {
+    return this.getPiece(index).getValidateableRange(offset);
 };
 
 DataDownload.prototype.onDownloaded = function(chunk) {
@@ -113,6 +118,36 @@ DataPiece.prototype.nextToDownload = function(wire, amount) {
         }
     }
     return result;
+};
+
+DataPiece.prototype.getValidateableRange = function(offset) {
+    var i, chunk;
+    /* Skip over preceding chunks */
+    for(i = 0; i < this.chunks.length; i++) {
+        chunk = this.chunks[i];
+        if (offset >= chunk.offset &&
+            offset < chunk.offset + chunk.length
+           ) {
+           break;
+        }
+    }
+    /* Select matching */
+    var length = 0;
+    for(; i < this.chunks.length; i++) {
+        chunk = this.chunks[i];
+        if (chunk.state !== 'downloaded') {
+            break;
+        }
+        if (chunk.offset < offset) {
+           length += chunk.length - offset + chunk.offset;
+        } else {
+            length += chunk.length;
+        }
+    }
+    return {
+        offset: offset,
+        length: length
+    };
 };
 
 DataPiece.prototype.onComplete = function(wire, amount) {

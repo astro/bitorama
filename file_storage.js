@@ -68,13 +68,14 @@ FileStorage.prototype._operate = function(offset, length, f, cb) {
 };
 
 FileStorage.prototype._getState = function(path) {
-    if (!this.states[path]) {
-        this.states[path] = new FileState(path, function stateDone() {
-            delete this.states[path];
-        }.bind(this));
+    var states = this.states;
+    if (!states[path]) {
+        states[path] = new FileState(path, function stateDone() {
+            delete states[path];
+        });
     }
 
-    return this.states[path];
+    return states[path];
 };
 
 FileStorage.prototype.read = function(offset, length, cb1) {
@@ -113,7 +114,11 @@ FileState.prototype._open = function(path) {
     var _filename = dirs.pop();
     function ensureDir(base, dirs, cb) {
         if (dirs.length > 0) {
-            base += (/\/$/.test(base) ? "" : "/") + dirs.shift();
+            var dir = dirs.shift();
+            if (base) {
+                base += "/";
+            }
+            base += dir;
             fs.mkdir(base, function(err) {
                 if (err && err.code != 'EEXIST') {
                     cb(err);
@@ -162,18 +167,26 @@ FileState.prototype._open = function(path) {
     }.bind(this));
 }
 
+FileState.prototype.close = function() {
+    if (this.fd) {
+        fs.close(this.fd);
+        this.fd = null;
+    }
+    this.doneCb();
+
+    if (this.queue.length > 0) {
+        this._fail("Closing despite " + this.queue.length + " pending requests");
+    }
+};
+
 FileState.prototype._fail = function(err) {
+    console.log("File fails:", err.stack);
     var queue = this.queue;
     this.queue = [];
     queue.forEach(function(op) {
         op.callback(err);
     });
-    if (this.fd) {
-        fs.close(this.fd, this.doneCb);
-        this.fd = null;
-    } else {
-        this.doneCb();
-    }
+    this.close();
 };
 
 /**
@@ -207,9 +220,11 @@ FileState.prototype._canWorkQueue = function() {
 
     var op = this.queue.shift();
     if (op) {
+        // var t1 = Date.now();
         if (op.type === 'read') {
             this.busy = true;
             var data = new Buffer(op.length);
+            // console.log((Date.now() - t1) + " ms: read", op.offset, "+", data.length);
             fs.read(this.fd, data, 0, data.length, op.offset, function(err, bytesRead, data) {
                 this.busy = false;
                 /* Invoke callback: */
@@ -226,6 +241,7 @@ FileState.prototype._canWorkQueue = function() {
         } else if (op.type === 'write') {
             this.busy = true;
             fs.write(this.fd, op.data, 0, op.data.length, op.offset, function(err, written) {
+                // console.log((Date.now() - t1) + " ms: write", op.offset, "+", op.data.length);
                 this.busy = false;
                 /* Invoke callback: */
                 if (err) {
@@ -243,6 +259,6 @@ FileState.prototype._canWorkQueue = function() {
             this._canWorkQueue();
         }
     } else {
-        fs.close(this.fd, this.doneCb);
+        this.close();
     }
 };

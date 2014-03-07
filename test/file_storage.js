@@ -89,7 +89,7 @@ test('fileToOffset (3 files)', function (t) {
 test('FileStorage state', function (t) {
     t.plan(6);
 
-    var base = __dirname + "/data/storage-1/";
+    var base = /*__dirname + "/ */ "test/data/storage-1/";
     var storage = new FileStorage([{
         path: base + "abc.txt",
         length: 3
