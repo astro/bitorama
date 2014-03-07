@@ -176,7 +176,10 @@ TorrentContext.prototype._canRequestAll = function(wire) {
 };
 
 TorrentContext.prototype._canRequest = function(wire) {
-    var minReqs = 2, maxReqs = Math.max(minReqs, 4);
+    /* Pieces per second */
+    var pps = wire.downloadSpeed() / DataDownload.chunkSize;
+    var minReqs = Math.max(2, Math.ceil(0.2 * pps));
+    var maxReqs = Math.max(minReqs + 1, Math.ceil(0.5 * pps));
 
     if (wire.peerChoking || wire.requests.length >= minReqs || wire._finished) {
         return;

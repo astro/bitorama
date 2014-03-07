@@ -1,6 +1,7 @@
 var CHUNK_SIZE = 16384;
 
 module.exports = DataDownload;
+module.exports.chunkSize = CHUNK_SIZE;
 
 /**
  * Tracks pieces that are currently in progress
