@@ -12,8 +12,8 @@ process.argv.slice(2).forEach(function(url) {
     if (/^magnet:/.test(url)) {
         var parsed = Magnet(url)
         console.log(parsed)
-        if ((m = parsed.xt.match(/^urn:btih:(.{40})/))) {
-            var infoHash = m[1];
+        if (parsed.btih) {
+            var infoHash = parsed.btih;
             var ctx = new TorrentContext(infoHash);
 
 
