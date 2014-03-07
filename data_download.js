@@ -101,7 +101,7 @@ function DataPiece(index, length) {
 }
 
 DataPiece.prototype.nextToDownload = function(wire, amount) {
-    if (this.complete || !wire.peerPieces[this.index]) {
+    if (this.complete || !wire.peerPieces.get(this.index)) {
         return [];
     }
 
@@ -109,8 +109,7 @@ DataPiece.prototype.nextToDownload = function(wire, amount) {
     for(var i = 0; result.length < amount && i < this.chunks.length; i++) {
         var chunk = this.chunks[i];
         /* TODO: have previously requested timeout */
-        if (chunk.state === 'missing' &&
-            wire.peerPieces[this.index]) {
+        if (chunk.state === 'missing') {
 
             chunk.state = 'requested';
             chunk.requestedBy[wire.remoteAddress] = Date.now();

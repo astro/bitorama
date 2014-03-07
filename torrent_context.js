@@ -72,11 +72,12 @@ TorrentContext.prototype._onInfo = function(info) {
     files.forEach(function(file) {
         totalLength += file.length;
     });
+    console.log("totalLength", totalLength, "files", files);
     this.storage = new FileStorage(files);
 
-    this.rarity = new RarityMap(this.swarm);
     this.download = new DataDownload(this.pieceLength, totalLength);
     this.validator = new DataValidator(sha1sums, this.pieceLength, totalLength);
+    this.rarity = new RarityMap(this.swarm, this.validator.pieces.length);
     this.validator.on('read', function(index, offset, length) {
         var range = this.download.getValidateableRange(index, offset)
         if (range.length > 0) {
@@ -92,13 +93,19 @@ TorrentContext.prototype._onInfo = function(info) {
     this.validator.on('piece:complete', function(index) {
         console.warn("Piece", index, "complete");
         this.download.removePiece(index);
-        this.swarm.wires.forEach(this._canInterest.bind(this));
+        this.swarm.wires.forEach(function(wire) {
+            wire.have(index);
+            this._canInterest(wire);
+        }.bind(this));
     }.bind(this));
     this.validator.on('piece:corrupt', function(index) {
         console.warn("Piece", index, "corrupt, must retry...");
     });
 
-    this.swarm.wires.forEach(function(wire) {
+    var setupWire = function(wire) {
+        /* Send bitfield */
+        wire.bitfield(this.validator.bitfield);
+        /* Change interest status */
         wire.on('bitfield', function() {
             this._canInterest(wire);
         }.bind(this));
@@ -107,6 +114,7 @@ TorrentContext.prototype._onInfo = function(info) {
         }.bind(this));
         this._canInterest(wire);
 
+        /* Start requesting */
         wire.on('unchoke', function() {
             this._canRequest(wire);
         }.bind(this));
@@ -121,7 +129,9 @@ TorrentContext.prototype._onInfo = function(info) {
                 });
             });
         }.bind(this));
-    }.bind(this));
+    }.bind(this);
+    this.swarm.wires.forEach(setupWire);
+    this.swarm.on('wire', setupWire);
 
     /* Stats print loop */
     setInterval(function() {
@@ -151,7 +161,7 @@ TorrentContext.prototype._canInterest = function(wire) {
     var piecesAmount = this.validator.pieces.length;
     for(var i = 0; !interested && i < piecesAmount; i++) {
         interested =
-            wire.peerPieces[i] &&
+            wire.peerPieces.get(i) &&
             !this.validator.isPieceComplete(i);
     }
     if (interested) {
@@ -161,15 +171,19 @@ TorrentContext.prototype._canInterest = function(wire) {
     }
 };
 
+TorrentContext.prototype._canRequestAll = function(wire) {
+    this.swarm.wires.forEach(this._canRequest.bind(this));
+};
+
 TorrentContext.prototype._canRequest = function(wire) {
-    var minReqs = 8, maxReqs = Math.max(minReqs, 32);
+    var minReqs = 2, maxReqs = Math.max(minReqs, 4);
 
     if (wire.peerChoking || wire.requests.length >= minReqs || wire._finished) {
         return;
     }
 
     var pieceFilter = function(index) {
-        return wire.peerPieces[index] &&
+        return wire.peerPieces.get(index) &&
             !this.validator.isPieceComplete(index) &&
             !this.download.isDownloadingPiece(index);
     }.bind(this);
@@ -187,6 +201,7 @@ TorrentContext.prototype._canRequest = function(wire) {
                         wire.cancel(chunk.index, chunk.offset, chunk.length);
                     }
                     this.download.onError(chunk);
+                    this._canRequestAll();
                 } else {
                     // console.warn(wire.remoteAddress, "cb", data.length);
                     this.storage.write(chunk.index * this.pieceLength + chunk.offset, data, function(err) {

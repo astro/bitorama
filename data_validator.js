@@ -1,5 +1,6 @@
 var inherits = require('inherits');
 var crypto = require('crypto');
+var BitField = require('bitfield')
 
 var SHA1SUM_NULL = "da39a3ee5e6b4b0d3255bfef95601890afd80709";
 
@@ -19,6 +20,7 @@ function DataValidator(sha1sums, pieceLength, totalLength) {
                 this.emit('read', n, offset, length);
             }.bind(this));
             piece.on('complete', function() {
+                this.bitfield.set(n);
                 this.emit('piece:complete', n);
                 this._checkCompleteness();
             }.bind(this));
@@ -28,6 +30,7 @@ function DataValidator(sha1sums, pieceLength, totalLength) {
             this.pieces.push(piece);
         }).bind(this)(n);
     }
+    this.bitfield = new BitField(pieceAmount);
 
     // TODO: start recovery
 }

@@ -1,7 +1,8 @@
 module.exports = RarityMap;
 
-function RarityMap(swarm) {
+function RarityMap(swarm, piecesAmount) {
     this.swarm = swarm;
+    this.piecesAmount = piecesAmount;
     this.rarity = [];
 
     swarm.on('wire', function(wire) {
@@ -13,8 +14,8 @@ function RarityMap(swarm) {
         }.bind(this));
         wire.on('bitfield', this._recalculateAll.bind(this));
         wire.on('end', function() {
-            for(var i = 0; i < wire.peerPieces.length; i++) {
-                if (wire.peerPieces[i]) {
+            for(var i = 0; i < this.piecesAmount; i++) {
+                if (wire.peerPieces.get(i)) {
                     this.rarity[i]--;
                 }
             }
@@ -27,8 +28,8 @@ RarityMap.prototype._recalculateAll = function() {
     this.rarity = [];
 
     this.swarm.wires.forEach(function(wire) {
-        for(var i = 0; i < wire.peerPieces.length; i++) {
-            if (wire.peerPieces[i]) {
+        for(var i = 0; i < this.piecesAmount; i++) {
+            if (wire.peerPieces.get(i)) {
                 if (typeof this.rarity[i] !== 'number') {
                     this.rarity[i] = 0;
                 }
