@@ -17,6 +17,7 @@
     "bittorrent-protocol": "git://github.com/astro/bittorrent-protocol.git",
     "bittorrent-tracker": "git://github.com/astro/bittorrent-tracker.git",
     "bittorrent-swarm": "~0.7.0",
+    "bitfield": "git://github.com/astro/bitfield.git",
     "inherits": "~2.0.1"
   },
   "devDependencies": {
