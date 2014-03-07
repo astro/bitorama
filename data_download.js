@@ -26,7 +26,6 @@ DataDownload.prototype.addPiece = function(index) {
     var piece = new DataPiece(index, length);
     piece.started = Date.now();
     this.pieces.push(piece);
-    console.log("added piece", index);
     return true;
 };
 

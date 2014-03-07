@@ -81,7 +81,7 @@ TorrentContext.prototype._onInfo = function(info) {
     this.validator.on('read', function(index, offset, length) {
         var range = this.download.getValidateableRange(index, offset)
         if (range.length > 0) {
-            console.log("validatable range", index, ":", range);
+            // console.log("validatable range", index, ":", range);
             var totalOffset = index * this.pieceLength + range.offset;
             this.storage.read(totalOffset, range.length, function(err, data) {
                 if (data) {
@@ -120,6 +120,10 @@ TorrentContext.prototype._onInfo = function(info) {
         }.bind(this));
         this._canRequest(wire);
 
+        wire.on('interested', function() {
+            console.log(wire.remoteAddress, "peer is interested");
+        }.bind(this));
+
         wire.on('end', function() {
             wire.requests.forEach(function(req) {
                 this.download.onError({
@@ -147,12 +151,15 @@ TorrentContext.prototype._onInfo = function(info) {
             function p(l) {
                 return Math.floor(100 * l / total) + "%";
             }
-            console.log(piece.index + ":", p(requested), "requested", p(downloaded), "downloaded, since", Math.floor((Date.now() - piece.started) / 100) / 10, "rarity:", this.rarity.rarity[piece.index]);
+            // console.log(piece.index + ":", p(requested), "requested", p(downloaded), "downloaded, since", Math.floor((Date.now() - piece.started) / 100) / 10, "rarity:", this.rarity.rarity[piece.index]);
         }.bind(this));
         var unchoked = this.swarm.wires.filter(function(wire) {
             return !wire.peerChoking;
         }).length;
-        console.log("Interested in", this.download.pieces.length, "pieces with", this.swarm.wires.length, "peers,", unchoked, "unchoked");
+        var interested = this.swarm.wires.filter(function(wire) {
+            return wire.peerInterested;
+        }).length;
+        console.log(Math.floor(100 * (1 - this.validator.getBytesLeft() / totalLength)) + "% Interested in", this.download.pieces.length, "pieces with", this.swarm.wires.length, "peers,", unchoked, "unchoked", this.swarm.downloadSpeed(), "down", interested, "interested", this.swarm.uploadSpeed(), "up");
     }.bind(this), 1000);
 };
 
@@ -194,12 +201,12 @@ TorrentContext.prototype._canRequest = function(wire) {
     var needMore = true;
     while(needMore) {
         var chunks = this.download.nextToDownload(wire, maxReqs - wire.requests.length);
-        console.log(wire.remoteAddress, "will be requested with", chunks.length, "chunks");
+        // console.log(wire.remoteAddress, "will be requested with", chunks.length, "chunks for bandwidth:", wire.downloadSpeed());
         chunks.forEach(function(chunk) {
             // console.log(wire.remoteAddress, "request", chunk.index, ":", chunk.offset, "+", chunk.length);
             wire.request(chunk.index, chunk.offset, chunk.length, function(error, data) {
                 if (error) {
-                    console.warn(wire.remoteAddress, "cb", error.message, { destroyed: wire.destroyed, _finished: wire._finished });
+                    // console.warn(wire.remoteAddress, "cb", error.message, { destroyed: wire.destroyed, _finished: wire._finished });
                     if (error.message == 'request has timed out') {
                         wire.cancel(chunk.index, chunk.offset, chunk.length);
                     }
@@ -225,14 +232,14 @@ TorrentContext.prototype._canRequest = function(wire) {
             var index = this.rarity.findRarest(pieceFilter);
             if (typeof index === 'number') {
                 if (this.download.addPiece(index)) {
-                    console.log("needed more, added piece", index);
+                    // console.log("needed more, added piece", index);
                 } else {
                     console.log("is already downloading", index, ":", this.download.getPiece(index));
                     needMore = false;
                 }
             } else {
                 /* Nothing left, TODO: go piece stealing */
-                console.log("needed more but nothing left");
+                // console.log("needed more but nothing left");
                 needMore = false;
             }
         }

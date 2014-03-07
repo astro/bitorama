@@ -40,6 +40,16 @@ DataValidator.prototype.isPieceComplete = function(index) {
     return this.pieces[index].complete;
 };
 
+DataValidator.prototype.getBytesLeft = function() {
+    var result = 0;
+    for(var i = 0; i < this.pieces.length; i++) {
+        if (!this.pieces[i].complete) {
+            result += this.pieces[i].pieceLength;
+        }
+    }
+    return result;
+};
+
 DataValidator.prototype.onData = function(index, offset, buffer) {
     var piece;
     if ((piece = this.pieces[index])) {
