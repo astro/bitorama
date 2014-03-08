@@ -132,7 +132,6 @@ MetadataDownloader.prototype.nextToDownload = function(wireAddress) {
 MetadataDownloader.prototype.canRequest = function(wireAddress, wireMetadata) {
     var piece;
     if ((piece = this.nextToDownload(wireAddress))) {
-        console.log("Req metadata", piece.number, "from", wireAddress);
         wireMetadata.request(piece.number);
     }
 };
