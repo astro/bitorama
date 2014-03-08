@@ -123,6 +123,15 @@ TorrentContext.prototype._onInfo = function(info) {
 
         wire.on('interested', function() {
             console.log(wire.remoteAddress, "peer is interested");
+            wire.unchoke();
+        }.bind(this));
+        wire.on('request', function(index, offset, length, respond) {
+            if (this.validator.isPieceComplete(index)) {
+                var totalOffset = index * this.pieceLength + offset;
+                this.storage.read(totalOffset, length, respond);
+            } else {
+                respond(new Error("Peer requested incomplete piece " + index));
+            }
         }.bind(this));
 
         wire.on('end', function() {
