@@ -21,7 +21,7 @@
     "inherits": "~2.0.1"
   },
   "devDependencies": {
-    "tape": "2.x"
+    "tap-prettify": "~0.0.2"
   },
   "keywords": [
     "torrent",
@@ -34,6 +34,6 @@
     "url": "git://github.com/astro/bitorama.git"
   },
   "scripts": {
-    "test": "tape test/*.js"
+    "test": "tap-prettify test/*.js"
   }
 }
