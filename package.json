@@ -21,6 +21,7 @@
     "inherits": "~2.0.1"
   },
   "devDependencies": {
+    "tape": "2.x",
     "tap-prettify": "~0.0.2"
   },
   "keywords": [
