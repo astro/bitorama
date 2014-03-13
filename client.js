@@ -1,4 +1,4 @@
-var Remote = require('./remote')
+var Remote = require('./remote_stream')
 
 var rem = Remote.connect("/tmp/bitorama.sock", function() {
     console.log("rem");

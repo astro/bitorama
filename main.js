@@ -2,6 +2,7 @@ var fs = require('fs');
 var Magnet = require('magnet-uri')
 var TorrentContext = require('./torrent_context');
 var Remote = require('./remote_stream');
+var RemoteAPI = require('./remote_api');
 
 
 process.on('uncaughtException', function(e) {
@@ -11,7 +12,7 @@ process.on('uncaughtException', function(e) {
 
 var ctxs = {};
 
-function loadUrl(url) {
+function loadUrl(url, cb) {
     if (/^magnet:/.test(url)) {
         var parsed = Magnet(url)
         console.log(parsed)
@@ -26,6 +27,11 @@ function loadUrl(url) {
             ctx.on('end', function() {
                 delete ctxs[parsed.infoHash];
             });
+
+            // TODO:
+            // cb(err) when ctx removed
+            // cb(null, info) on 'info'
+
         } else {
             console.log("Ignoring magnet link", parsed.xt)
         }
@@ -41,17 +47,18 @@ fs.unlink(SOCK_PATH, function(err) {
         process.exit(1);
     }
 
-    Remote.listen(SOCK_PATH, function(remote) {
+    Remote.listen(SOCK_PATH, function(stream) {
         console.log("remote");
-        remote.on('data', function(msg) {
-            console.log("d", msg);
+        var api = new RemoteAPI(stream);
+        api.on('loadUrl', function(msg, reply) {
+            if (msg.url) {
+                loadUrl(msg.url, function(error, infoHash) {
+                    remote.write({
+                        url: msg.url,
+                        infoHash: msg.infoHash
+                    });
+                });
+            }
         });
-        var i = 0;
-        function spam() {
-            while(remote.write({ hello: ++i })) { }
-        }
-        remote.on('drain', spam);
-        spam();
-        // remote.end();
     });
 });
