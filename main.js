@@ -15,35 +15,36 @@ var ctxs = {};
 function loadUrl(url, cb) {
     if (/^magnet:/.test(url)) {
         var parsed = Magnet(url)
-        console.log(parsed)
-        if (parsed.infoHash) {
-            var ctx = new TorrentContext(parsed.infoHash);
-            ctxs[parsed.infoHash] = ctx;
+        var infoHash = parsed && parsed.infoHash;
 
+        if (infoHash && !ctxs.hasOwnProperty(infoHash)) {
+            var ctx = ctxs[infoHash] = new TorrentContext(infoHash);
             parsed.tr.forEach(function(t) {
                 ctx.addTrackerGroup([t]);
             });
 
-            ctx.on('end', function() {
-                delete ctxs[parsed.infoHash];
-            });
+            // ctx.on('end', function() {
+            //     delete ctxs[parsed.infoHash];
+            // });
 
-            // TODO:
-            // cb(err) when ctx removed
-            // cb(null, info) on 'info'
+            cb(null, infoHash);
 
+        } else if (ctxs.hasOwnProperty(infoHash)) {
+            cb(null, infoHash);
         } else {
-            console.log("Ignoring magnet link", parsed.xt)
+            console.log("Ignoring magnet link", parsed.xt);
+            cb(new Error("Ignored"));
         }
     } else {
         console.log("Ignoring url", url)
+        cb(new Error("Ignored"));
     }
 }
 
 var SOCK_PATH = "/tmp/bitorama.sock";
 fs.unlink(SOCK_PATH, function(err) {
-    if (err) {
-        console.error("Cannot unlink " + SOCK_PATH + "\n" + err.message);
+    if (err && err.code != 'ENOENT') {
+        console.error("Cannot unlink " + SOCK_PATH + "\n" + err.code);
         process.exit(1);
     }
 
@@ -53,9 +54,9 @@ fs.unlink(SOCK_PATH, function(err) {
         api.on('loadUrl', function(msg, reply) {
             if (msg.url) {
                 loadUrl(msg.url, function(error, infoHash) {
-                    remote.write({
+                    reply(error, infoHash && {
                         url: msg.url,
-                        infoHash: msg.infoHash
+                        infoHash: infoHash
                     });
                 });
             }
