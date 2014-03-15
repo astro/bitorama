@@ -39,6 +39,8 @@ app.use(function(req, res, next) {
     }
 });
 
+app.use(express.static(__dirname + '/public'));
+
 app.post('/torrents', function(req, res) {
     res.remoteCall({
         command: 'loadUrl',

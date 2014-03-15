@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html ng-app="bitoramaApp">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>Bitorama</title>
+    <script src="angular.js"></script>
+    <script src="angular-route.js"></script>
+    <script src="app.js"></script>
+  </head>
+
+  <body>
+    <h1>Bitorama</h1>
+
+    <nav>
+      <ul>
+        <li><a href="#add">Add Torrent</a></li>
+        <li><a href="#torrents">Torrents</a></li>
+      </ul>
+    </nav>
+
+    <section ng-view>
+    </section>
+  </body>
+</html>
