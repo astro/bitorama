@@ -8,6 +8,7 @@ function RemoteAPI(stream) {
     stream.on('data', function(msg) {
         if (msg.command) {
             var reply = function(err, result) {
+                reply = function() { };
                 var res = {
                     reply: msg.command,
                     id: msg.id
@@ -19,7 +20,11 @@ function RemoteAPI(stream) {
                 }
                 stream.write(res);
             };
-            this.emit(msg.command, msg, reply);
+            try {
+                this.emit(msg.command, msg, reply);
+            } catch (e) {
+                reply(e);
+            }
         }
     }.bind(this));
 }

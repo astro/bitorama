@@ -43,6 +43,7 @@ TorrentContext.prototype.addTrackerGroup = function(urls) {
     tg.on('info', function(info) {
         info.info_hash = this.infoHash;
         info.peer_id = this.peerId;
+        // TODO
     }.bind(this));
     tg.on('peers', function(peers) {
         console.log('peers', peers);

@@ -59,6 +59,38 @@ fs.unlink(SOCK_PATH, function(err) {
                         infoHash: infoHash
                     });
                 });
+            } else {
+                reply(new Error("No URL"));
+            }
+        });
+        api.on('listTorrents', function(msg, reply) {
+            reply(null, Object.keys(ctxs));
+        });
+        api.on('getTorrentInfo', function(msg, reply) {
+            if (msg.infoHash && ctxs.hasOwnProperty(msg.infoHash)) {
+                var ctx = ctxs[msg.infoHash];
+                var result = {
+                    downloadSpeed: ctx.swarm.downloadSpeed(),
+                    uploadSpeed: ctx.swarm.uploadSpeed(),
+                    peers: ctx.swarm.wires.map(function(wire) {
+                        return {
+                            remoteAddress: wire.remoteAddress,
+                            interested: wire.peerInterested,
+                            choking: wire.peerChoking,
+                            downloadSpeed: wire.downloadSpeed(),
+                            uploadSpeed: wire.uploadSpeed()
+                        };
+                    })
+                };
+                if (ctx.validator) {
+                    result.left = ctx.validator.getBytesLeft()
+                }
+                if (ctx.storage) {
+                    result.files = ctx.storage.files;
+                }
+                reply(null, result);
+            } else {
+                reply(new Error("No such InfoHash"));
             }
         });
     });

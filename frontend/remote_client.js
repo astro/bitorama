@@ -1,6 +1,11 @@
-var Remote = require('./remote_stream')
+var util = require('util');
+var Remote = require('../remote_stream')
 
-function RemoteConnection(path, cb) {
+util.inherits(RemoteClient, process.EventEmitter);
+
+function RemoteClient(path, cb) {
+    process.EventEmitter.call(this);
+
     this.callbacks = {};
     this.remote = Remote.connect("/tmp/bitorama.sock", function() {
         this.remote.on('data', this._onData.bind(this));
@@ -8,8 +13,10 @@ function RemoteConnection(path, cb) {
         cb(this);
     }.bind(this));
 }
+module.exports = RemoteClient;
 
-RemoteConnection.prototype._onData = function(msg) {
+RemoteClient.prototype._onData = function(msg) {
+    console.log("onData", msg);
     var cb;
     if (msg.id &&
         (cb = this.callbacks[msg.id])) {
@@ -23,14 +30,15 @@ RemoteConnection.prototype._onData = function(msg) {
     }
 };
 
-RemoteConnection.prototype._onEnd = function() {
+RemoteClient.prototype._onEnd = function() {
     for(var id in this.callbacks) {
         var cb = this.callbacks[id];
         cb(new Error("Disconnected"));
     }
+    this.emit('end');
 };
 
-RemoteConnection.prototype._call = function(msg, cb) {
+RemoteClient.prototype._call = function(msg, cb) {
     var id;
     do {
         id = "" + Math.ceil(999999 * Math.random());
@@ -41,23 +49,22 @@ RemoteConnection.prototype._call = function(msg, cb) {
     this.remote.write(msg);
 };
 
-RemoteConnection.prototype.loadUrl = function(url, cb) {
+RemoteClient.prototype.loadUrl = function(url, cb) {
     this._call({
         command: 'loadUrl',
         url: url
     }, cb);
 };
 
-var rem = new RemoteConnection("/tmp/bitorama.sock", function() {
-    console.log("Connected to Bitorama \\o/");
+RemoteClient.prototype.listTorrents = function(cb) {
+    this._call({
+        command: 'listTorrents'
+    }, cb);
+};
 
-    process.argv.slice(2).forEach(function(arg) {
-        rem.loadUrl(arg, function(error, res) {
-            if (error) {
-                console.error(error.message);
-                return;
-            }
-            console.log("loadUrl ->", res.infoHash);
-        });
-    });
-});
+RemoteClient.prototype.getTorrentInfo = function(infoHash, cb) {
+    this._call({
+        command: 'getTorrentInfo',
+        infoHash: infoHash
+    }, cb);
+};
