@@ -1,5 +1,5 @@
 var util = require('util');
-var Remote = require('../remote_stream')
+var Remote = require('../lib/remote_stream')
 
 util.inherits(RemoteClient, process.EventEmitter);
 

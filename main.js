@@ -1,8 +1,8 @@
 var fs = require('fs');
 var Magnet = require('magnet-uri')
-var TorrentContext = require('./torrent_context');
-var Remote = require('./remote_stream');
-var RemoteAPI = require('./remote_api');
+var TorrentContext = require('./lib/torrent_context');
+var Remote = require('./lib/remote_stream');
+var RemoteAPI = require('./lib/remote_api');
 
 
 process.on('uncaughtException', function(e) {
