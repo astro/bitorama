@@ -32,10 +32,9 @@ app.controller('TorrentsController', function($scope, $interval, $http) {
     $scope.torrents = {};
 
     $interval(function() {
-        console.log("tick");
         $http.get('/torrents').
         success(function(result) {
-            console.log("got", result);
+            console.log("torrents:", result);
             result.forEach(function(infoHash) {
                 /* Add new */
                 if (!$scope.torrents.hasOwnProperty(infoHash)) {
@@ -45,15 +44,25 @@ app.controller('TorrentsController', function($scope, $interval, $http) {
                 /* Refresh */
                 $http.get('/torrents/' + infoHash).
                 success(function(result) {
-                    $scope.torrents[infoHash] = result;
+                    console.log("r", infoHash, result);
+                    for(k in result) {
+                        if (result.hasOwnProperty(k)) {
+                            $scope.torrents[infoHash][k] = result[k];
+                        }
+                    }
+                    console.log("s", $scope.torrents[infoHash]);
                 });
             });
             /* Remove disappeared */
             Object.keys($scope.torrents).forEach(function(infoHash) {
-                if (!result.hasOwnProperty(infoHash)) {
+                if (result.indexOf(infoHash) < 0) {
                     delete $scope.torrents[infoHash];
                 }
             });
         });
     }, 1000);
+});
+
+app.controller('TorrentsTorrentController', function($scope, $interval, $http) {
+    console.log("TorrentsTorrentController", $scope.torrent);
 });

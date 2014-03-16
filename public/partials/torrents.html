@@ -1,5 +1,5 @@
-<article ng-repeat="(_infoHash, torrent) in torrents">
+<article ng-repeat="(_infoHash, torrent) in torrents" ng-controller="TorrentsTorrentController">
   <h2>{{torrent.name}}</h2>
-  <p>{{torrent.downspeed}} down</p>
-  <p>{{torrent.upspeed}} up</p>
+  <p>{{torrent.downloadSpeed}} down</p>
+  <p>{{torrent.uploadSpeed}} up</p>
 </article>

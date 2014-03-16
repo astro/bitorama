@@ -1,7 +1,11 @@
 <form ng-submit="add()">
-  <label>
-    By URL:
-    <textarea ng-model="url" cols="40" rows="6"></textarea>
-  </label>
-  <input type="submit" value="Add">
+  <p>
+    <label for="addUrl">By URL:</label>
+  </p>
+  <p>
+    <textarea id="addUrl" ng-model="url" cols="40" rows="6"></textarea>
+  </p>
+  <p>
+    <input type="submit" value="Add">
+  </p>
 </form>

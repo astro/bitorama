@@ -48,8 +48,8 @@ app.use(express.static(__dirname + '/public'));
 
 app.post('/torrents', function(req, res) {
     var url = req.body.url;
-    loadUrl(msg.url, function(error, infoHash) {
-        if (error) {
+    loadUrl(url, function(err, infoHash) {
+        if (err) {
             res.status(500);
             res.send(err.message);
             return;
@@ -73,17 +73,11 @@ app.get('/torrents/:infoHash', function(req, res) {
         var ctx = ctxs[infoHash];
         var result = {
             downloadSpeed: ctx.swarm.downloadSpeed(),
-            uploadSpeed: ctx.swarm.uploadSpeed(),
-            peers: ctx.swarm.wires.map(function(wire) {
-                return {
-                    remoteAddress: wire.remoteAddress,
-                    interested: wire.peerInterested,
-                    choking: wire.peerChoking,
-                    downloadSpeed: wire.downloadSpeed(),
-                    uploadSpeed: wire.uploadSpeed()
-                };
-            })
+            uploadSpeed: ctx.swarm.uploadSpeed()
         };
+        if (ctx.info && ctx.info.name) {
+            result.name = ctx.info.name.toString();
+        }
         if (ctx.validator) {
             result.left = ctx.validator.getBytesLeft()
         }
