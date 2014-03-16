@@ -1,8 +1,8 @@
 var fs = require('fs');
+var express = require('express');
+var bodyParser = require('body-parser');
 var Magnet = require('magnet-uri')
 var TorrentContext = require('./lib/torrent_context');
-var Remote = require('./lib/remote_stream');
-var RemoteAPI = require('./lib/remote_api');
 
 
 process.on('uncaughtException', function(e) {
@@ -41,57 +41,60 @@ function loadUrl(url, cb) {
     }
 }
 
-var SOCK_PATH = "/tmp/bitorama.sock";
-fs.unlink(SOCK_PATH, function(err) {
-    if (err && err.code != 'ENOENT') {
-        console.error("Cannot unlink " + SOCK_PATH + "\n" + err.code);
-        process.exit(1);
-    }
+var app = express();
+app.use(bodyParser());
 
-    Remote.listen(SOCK_PATH, function(stream) {
-        console.log("remote");
-        var api = new RemoteAPI(stream);
-        api.on('loadUrl', function(msg, reply) {
-            if (msg.url) {
-                loadUrl(msg.url, function(error, infoHash) {
-                    reply(error, infoHash && {
-                        url: msg.url,
-                        infoHash: infoHash
-                    });
-                });
-            } else {
-                reply(new Error("No URL"));
-            }
-        });
-        api.on('listTorrents', function(msg, reply) {
-            reply(null, Object.keys(ctxs));
-        });
-        api.on('getTorrentInfo', function(msg, reply) {
-            if (msg.infoHash && ctxs.hasOwnProperty(msg.infoHash)) {
-                var ctx = ctxs[msg.infoHash];
-                var result = {
-                    downloadSpeed: ctx.swarm.downloadSpeed(),
-                    uploadSpeed: ctx.swarm.uploadSpeed(),
-                    peers: ctx.swarm.wires.map(function(wire) {
-                        return {
-                            remoteAddress: wire.remoteAddress,
-                            interested: wire.peerInterested,
-                            choking: wire.peerChoking,
-                            downloadSpeed: wire.downloadSpeed(),
-                            uploadSpeed: wire.uploadSpeed()
-                        };
-                    })
-                };
-                if (ctx.validator) {
-                    result.left = ctx.validator.getBytesLeft()
-                }
-                if (ctx.storage) {
-                    result.files = ctx.storage.files;
-                }
-                reply(null, result);
-            } else {
-                reply(new Error("No such InfoHash"));
-            }
+app.use(express.static(__dirname + '/public'));
+
+app.post('/torrents', function(req, res) {
+    var url = req.body.url;
+    loadUrl(msg.url, function(error, infoHash) {
+        if (error) {
+            res.status(500);
+            res.send(err.message);
+            return;
+        }
+
+        res.json({
+            infoHash: infoHash
         });
     });
+
 });
+
+app.get('/torrents', function(req, res) {
+    res.json(Object.keys(ctxs));
+});
+
+app.get('/torrents/:infoHash', function(req, res) {
+    var infoHash = req.params.infoHash;
+
+    if (infoHash && ctxs.hasOwnProperty(infoHash)) {
+        var ctx = ctxs[infoHash];
+        var result = {
+            downloadSpeed: ctx.swarm.downloadSpeed(),
+            uploadSpeed: ctx.swarm.uploadSpeed(),
+            peers: ctx.swarm.wires.map(function(wire) {
+                return {
+                    remoteAddress: wire.remoteAddress,
+                    interested: wire.peerInterested,
+                    choking: wire.peerChoking,
+                    downloadSpeed: wire.downloadSpeed(),
+                    uploadSpeed: wire.uploadSpeed()
+                };
+            })
+        };
+        if (ctx.validator) {
+            result.left = ctx.validator.getBytesLeft()
+        }
+        if (ctx.storage) {
+            result.files = ctx.storage.files;
+        }
+        res.json(result);
+    } else {
+        res.status(500);
+        res.send("No such torrent");
+    }
+});
+
+app.listen(4000);
