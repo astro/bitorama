@@ -2,27 +2,34 @@ var express = require('express');
 var bodyParser = require('body-parser');
 var RemoteClient = require('./remote_client');
 
-var remote;
+var remote, connecting;
 
 function connectRemote() {
-    var rem = new RemoteClient("/tmp/bitorama.sock", function() {
+    remote = new RemoteClient("/tmp/bitorama.sock", function() {
         console.log("Connected to Bitorama \\o/");
-        remote = rem;
     });
-    rem.on('end', function() {
-        remote = null;
-        setTimeout(connectRemote, 1000);
-    });
+    function done() {
+        console.log("done", arguments);
+        if (remote) {
+            remote = null;
+            setTimeout(connectRemote, 1000);
+        }
+    }
+    remote.on('end', done);
+    remote.on('error', done);
 }
 connectRemote();
 
 var app = express();
 app.use(bodyParser());
 
+/* Hook that sets up res.remoteCall() */
 app.use(function(req, res, next) {
     if (remote) {
         res.remoteCall = function(msg) {
+            console.log("remoteCall", msg);
             remote._call(msg, function(err, result) {
+                console.log("_call", err, result);
                 if (err) {
                     res.status(500);
                     res.send(err.message);

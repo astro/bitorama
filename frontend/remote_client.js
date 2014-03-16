@@ -12,6 +12,7 @@ function RemoteClient(path, cb) {
         this.remote.on('end', this._onEnd.bind(this));
         cb(this);
     }.bind(this));
+    this.remote.on('error', this.emit.bind(this, 'error'));
 }
 module.exports = RemoteClient;
 
