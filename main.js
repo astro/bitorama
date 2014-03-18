@@ -79,10 +79,11 @@ app.get('/torrents/:infoHash', function(req, res) {
             result.name = ctx.info.name.toString();
         }
         if (ctx.validator) {
-            result.left = ctx.validator.getBytesLeft()
+            result.left = ctx.validator.getBytesLeft();
         }
         if (ctx.storage) {
             result.files = ctx.storage.files;
+            result.totalLength = ctx.totalLength;
         }
         res.json(result);
     } else {
