@@ -4,7 +4,7 @@
   <h2>{{torrent.name}}</h2>
   <p ng-show="typeof(torrent.downloadSpeed) == 'number' && typeof(torrent.uploadSpeed) == 'number'">
   <p>
-    <span class="downspeed">{{humanSize(torrent.downloadSpeed)}}/s down</span>
-    <span class="upspeed">{{humanSize(torrent.uploadSpeed)}}/s up</span>
+    <span class="downspeed">{{torrent.downloadSpeed | humanSize}}/s down</span>
+    <span class="upspeed">{{torrent.uploadSpeed | humanSize}}/s up</span>
   </p>
 </article>

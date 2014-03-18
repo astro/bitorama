@@ -33,6 +33,11 @@ app.config(function($locationProvider, $routeProvider) {
         otherwise({
             redirectTo: '/torrents'
         });
+
+});
+
+app.filter('humanSize', function() {
+    return humanSize;
 });
 
 app.controller('AddTorrentController', function($scope, $http, $location) {
@@ -80,5 +85,4 @@ app.controller('TorrentsTorrentController', function($scope, $interval, $http) {
         });
     }, 1000);
     
-    $scope.humanSize = humanSize;
 });
