@@ -5,6 +5,15 @@ html, body {
   font: Verdana, Verana, sans-serif;
 }
 
+a {
+  color: #333;
+  font-weight: bold;
+  text-decoration: none;
+}
+a:hover {
+  color: black;
+}
+
 h1 {
   margin: 0;
   padding: 0.3em 1em;
@@ -30,14 +39,6 @@ nav ul li {
   padding: 0.2em 0.4em;
   margin: 0.1em -1px 0.1em 0;
 }
-nav ul li a {
-  color: #333;
-  font-weight: bold;
-  text-decoration: none;
-}
-nav ul li a:hover {
-  color: black;
-}
 
 #content {
   background-color: white;
@@ -52,6 +53,9 @@ nav ul li a:hover {
   border-bottom: 1px solid #999;
   margin: 0;
   padding: 0.6em 1em;
+}
+.torrent:last-child {
+  border-bottom: none;
 }
 .torrent h2 {
   margin: 0;

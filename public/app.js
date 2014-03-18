@@ -85,4 +85,9 @@ app.controller('TorrentsTorrentController', function($scope, $interval, $http) {
         });
     }, 1000);
     
+    $scope.percentDone = function() {
+        var left = $scope.torrent.left;
+        var totalLength = $scope.torrent.totalLength;
+        return Math.floor(100 * (1 - left / totalLength));
+    };
 });

@@ -1,8 +1,14 @@
 <article ng-repeat="infoHash in torrents"
          ng-controller="TorrentsTorrentController"
          class="torrent">
-  <h2>{{torrent.name}}</h2>
-  <p ng-show="typeof(torrent.downloadSpeed) == 'number' && typeof(torrent.uploadSpeed) == 'number'">
+  <h2>
+    <a href="#/torrents/{{infoHash}}">
+      {{torrent.name}}
+    </a>
+  </h2>
+  <p ng-show="torrent.totalLength">
+    {{percentDone()}}% of {{torrent.totalLength | humanSize}}
+  </p>
   <p>
     <span class="downspeed">{{torrent.downloadSpeed | humanSize}}/s down</span>
     <span class="upspeed">{{torrent.uploadSpeed | humanSize}}/s up</span>
