@@ -1,4 +1,4 @@
-var FileStorage = require('../file_storage')
+var FileStorage = require('../lib/file_storage')
 var test = require('tape')
 var fs = require('fs')
 var exec = require('child_process').exec

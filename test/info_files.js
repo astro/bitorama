@@ -1,4 +1,4 @@
-var infoToFiles = require('../info_files')
+var infoToFiles = require('../lib/info_files')
 var test = require('tape')
 
 test('single-file torrent', function (t) {

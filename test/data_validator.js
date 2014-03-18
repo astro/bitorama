@@ -1,4 +1,4 @@
-var DataValidator = require('../data_validator')
+var DataValidator = require('../lib/data_validator')
 var test = require('tape')
 
 SHA1_65536NULLBYTES = "1adc95bebe9eea8c112d40cd04ab7a8d75c4f961";

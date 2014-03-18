@@ -1,4 +1,4 @@
-var MetadataDownload = require('../metadata_download')
+var MetadataDownload = require('../lib/metadata_download')
 var test = require('tape')
 var fs = require('fs');
 var crypto = require('crypto');
