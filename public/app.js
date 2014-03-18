@@ -1,6 +1,24 @@
+function humanSize(size) {
+    var units = ["B", "KB", "MB", "GB", "TB"];
+    while(size >= 1024 && units.length > 1) {
+        size /= 1024;
+        units.shift();
+    }
+    if (size < 10) {
+        return Math.round(size * 100) / 100 + " " + units[0];
+    } else if (size < 100) {
+        return Math.round(size * 10) / 10 + " " + units[0];
+    } else {
+        return Math.round(size) + " " + units[0];
+    }
+};
+
+
 var app = angular.module('bitoramaApp', ['ngRoute']);
 
 app.config(function($locationProvider, $routeProvider) {
+    /* Routing */
+
     $locationProvider.html5Mode(false).hashPrefix('');
 
     $routeProvider.
@@ -29,40 +47,38 @@ app.controller('AddTorrentController', function($scope, $http, $location) {
 });
 
 app.controller('TorrentsController', function($scope, $interval, $http) {
-    $scope.torrents = {};
+    $scope.torrents = [];
 
     $interval(function() {
         $http.get('/torrents').
         success(function(result) {
-            console.log("torrents:", result);
             result.forEach(function(infoHash) {
                 /* Add new */
-                if (!$scope.torrents.hasOwnProperty(infoHash)) {
-                    $scope.torrents[infoHash] = {};
+                if ($scope.torrents.indexOf(infoHash) < 0) {
+                    $scope.torrents.push(infoHash);
                 }
-
-                /* Refresh */
-                $http.get('/torrents/' + infoHash).
-                success(function(result) {
-                    console.log("r", infoHash, result);
-                    for(k in result) {
-                        if (result.hasOwnProperty(k)) {
-                            $scope.torrents[infoHash][k] = result[k];
-                        }
-                    }
-                    console.log("s", $scope.torrents[infoHash]);
-                });
             });
             /* Remove disappeared */
-            Object.keys($scope.torrents).forEach(function(infoHash) {
-                if (result.indexOf(infoHash) < 0) {
-                    delete $scope.torrents[infoHash];
-                }
+            $scope.torrents = $scope.torrents.filter(function(infoHash) {
+                return result.indexOf(infoHash) >= 0;
             });
         });
     }, 1000);
 });
 
 app.controller('TorrentsTorrentController', function($scope, $interval, $http) {
-    console.log("TorrentsTorrentController", $scope.torrent);
+    $scope.torrent = {};
+
+    $interval(function() {
+        $http.get('/torrents/' + $scope.infoHash).
+        success(function(result) {
+            for(k in result) {
+                if (result.hasOwnProperty(k)) {
+                    $scope.torrent[k] = result[k];
+                }
+            }
+        });
+    }, 1000);
+    
+    $scope.humanSize = humanSize;
 });
