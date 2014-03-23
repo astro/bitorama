@@ -13,6 +13,16 @@ function humanSize(size) {
     }
 };
 
+function lpad(s, len, pad) {
+    if (typeof s !== 'string') {
+        s = "" + s;
+    }
+    while(s.length < len) {
+        s = pad + s;
+    }
+    return s;
+}
+
 
 var app = angular.module('bitoramaApp', ['ngRoute']);
 
@@ -126,11 +136,45 @@ app.controller('TorrentsTorrentController', function($scope, httpPoll) {
                 $scope.torrent[k] = result[k];
             }
         }
+
+        if (!$scope.downloadSpeedAvg) {
+            $scope.downloadSpeedAvg = $scope.torrent.downloadSpeed;
+        } else {
+            $scope.downloadSpeedAvg =
+                0.9 * $scope.downloadSpeedAvg +
+                0.1 * $scope.torrent.downloadSpeed;
+        }
     }));
     
     $scope.percentDone = function() {
         var left = $scope.torrent.left;
         var totalLength = $scope.torrent.totalLength;
         return Math.floor(100 * (1 - left / totalLength));
+    };
+
+    $scope.eta = function() {
+        if ($scope.torrent.downloadSpeed <= 0) {
+            return "∞";
+        }
+
+        var s = Math.ceil($scope.torrent.left / $scope.downloadSpeedAvg);
+        var h = 0, m = 0;
+        while(s >= 60 * 60) {
+            s -= 60 * 60;
+            h++;
+        }
+        while(s >= 60) {
+            s -= 60;
+            m++;
+        }
+
+        s = lpad(s, 2, "0");
+        if (h > 0 || m > 0) {
+            s = lpad(m, 2, "0") + ":" + s;
+        }
+        if (h > 0) {
+            s = lpad(h, 2, "0") + ":" + s;
+        }
+        return s;
     };
 });

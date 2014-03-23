@@ -7,10 +7,15 @@
     </a>
   </h2>
   <p ng-show="torrent.totalLength">
-    {{percentDone()}}% of {{torrent.totalLength | humanSize}}
-  </p>
-  <p>
-    <span class="downspeed">{{torrent.downloadSpeed | humanSize}}/s down</span>
+    {{percentDone()}}% of {{torrent.totalLength | humanSize}},
+    ETA: {{eta()}}
     <span class="upspeed">{{torrent.uploadSpeed | humanSize}}/s up</span>
+    <span class="downspeed">{{torrent.downloadSpeed | humanSize}}/s down</span>
   </p>
+  <ul ng-show="torrent.files" class="files">
+    <li ng-repeat="file in torrent.files">
+      {{file.path}}
+      <span class="size">{{file.length | humanSize}}</span>
+    </li>
+  </ul>
 </article>
