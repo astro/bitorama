@@ -36,6 +36,55 @@ app.config(function($locationProvider, $routeProvider) {
 
 });
 
+app.factory('httpPoll', function($http, $timeout) {
+    var urlCbs = {};
+
+    function workUrls(urls, cb) {
+        var url = urls.shift();
+        if (url) {
+            $http.get(url)
+                .success(function(data) {
+                    if (urlCbs.hasOwnProperty(url)) {
+                        urlCbs[url].forEach(function(cb) {
+                            cb(data);
+                        });
+                    }
+                    /* Loop */
+                    workUrls(urls, cb);
+                })
+                .error(function(data, status) {
+                    /* Ignore & loop */
+                    workUrls(urls, cb);
+                });
+        } else {
+            /* No url, done */
+            cb();
+        }
+    }
+    function start() {
+        $timeout(function() {
+            workUrls(Object.keys(urlCbs), start);
+        }, 1000);
+    }
+    start();
+
+    return function(url, cb) {
+        if (!urlCbs.hasOwnProperty(url)) {
+            urlCbs[url] = [];
+        }
+        urlCbs[url].push(cb);
+
+        return function remove() {
+            urlCbs[url] = urlCbs[url].filter(function(cb1) {
+                return cb !== cb1;
+            });
+            if (urlCbs[url].length < 1) {
+                delete urlCbs[url];
+            }
+        };
+    };
+});
+
 app.filter('humanSize', function() {
     return humanSize;
 });
@@ -51,39 +100,33 @@ app.controller('AddTorrentController', function($scope, $http, $location) {
     };
 });
 
-app.controller('TorrentsController', function($scope, $interval, $http) {
+app.controller('TorrentsController', function($scope, httpPoll) {
     $scope.torrents = [];
 
-    $interval(function() {
-        $http.get('/torrents').
-        success(function(result) {
-            result.forEach(function(infoHash) {
-                /* Add new */
-                if ($scope.torrents.indexOf(infoHash) < 0) {
-                    $scope.torrents.push(infoHash);
-                }
-            });
-            /* Remove disappeared */
-            $scope.torrents = $scope.torrents.filter(function(infoHash) {
-                return result.indexOf(infoHash) >= 0;
-            });
-        });
-    }, 1000);
-});
-
-app.controller('TorrentsTorrentController', function($scope, $interval, $http) {
-    $scope.torrent = {};
-
-    $interval(function() {
-        $http.get('/torrents/' + $scope.infoHash).
-        success(function(result) {
-            for(k in result) {
-                if (result.hasOwnProperty(k)) {
-                    $scope.torrent[k] = result[k];
-                }
+    $scope.$on('$destroy', httpPoll('/torrents', function(result) {
+        result.forEach(function(infoHash) {
+            /* Add new */
+            if ($scope.torrents.indexOf(infoHash) < 0) {
+                $scope.torrents.push(infoHash);
             }
         });
-    }, 1000);
+        /* Remove disappeared */
+        $scope.torrents = $scope.torrents.filter(function(infoHash) {
+            return result.indexOf(infoHash) >= 0;
+        });
+    }));
+});
+
+app.controller('TorrentsTorrentController', function($scope, httpPoll) {
+    $scope.torrent = {};
+
+    $scope.$on('$destroy', httpPoll('/torrents/' + $scope.infoHash, function(result) {
+        for(k in result) {
+            if (result.hasOwnProperty(k)) {
+                $scope.torrent[k] = result[k];
+            }
+        }
+    }));
     
     $scope.percentDone = function() {
         var left = $scope.torrent.left;
