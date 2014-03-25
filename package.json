@@ -20,7 +20,8 @@
     "bitfield": "git://github.com/astro/bitfield.git",
     "inherits": "~2.0.1",
     "express": "~3.4.8",
-    "body-parser": "~1.0.0"
+    "body-parser": "~1.0.0",
+    "request": "~2.34.0"
   },
   "devDependencies": {
     "tape": "2.x",

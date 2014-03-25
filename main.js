@@ -1,7 +1,10 @@
 var fs = require('fs');
+var crypto = require('crypto');
 var express = require('express');
 var bodyParser = require('body-parser');
-var Magnet = require('magnet-uri')
+var request = require('request');
+var bncode = require('bncode');
+var Magnet = require('magnet-uri');
 var TorrentContext = require('./lib/torrent_context');
 
 
@@ -10,11 +13,28 @@ process.on('uncaughtException', function(e) {
 });
 
 
+function parseTorrent(data) {
+    var torrent = bncode.decode(data);
+    console.log("decoded", torrent);
+    var info = torrent.info;
+    var announceList =
+        torrent['announce-list'] ||
+        [[torrent['announce']]];
+    var sha1 = crypto.createHash('sha1');
+    sha1.update(bncode.encode(info));
+    return {
+        info: info,
+        infoHash: sha1.digest('hex'),
+        announce: announceList
+    };
+}
+
 var ctxs = {};
 
 function loadUrl(url, cb) {
+    var parsed;
     if (/^magnet:/.test(url)) {
-        var parsed = Magnet(url)
+        parsed = Magnet(url);
         var infoHash = parsed && parsed.infoHash;
 
         if (infoHash && !ctxs.hasOwnProperty(infoHash)) {
@@ -35,9 +55,45 @@ function loadUrl(url, cb) {
             console.log("Ignoring magnet link", parsed.xt);
             cb(new Error("Ignored"));
         }
+    } else if (/^https?:\/\//.test(url)) {
+        request({
+            url: url,
+            encoding: null
+        }, function(err, res, body) {
+            if (err) {
+                return cb(err);
+            }
+            if (res.statusCode == 200) {
+                var infoHash;
+                try {
+                    parsed = parseTorrent(body);
+                    infoHash = parsed.infoHash;
+
+                    if (infoHash && !ctxs.hasOwnProperty(infoHash)) {
+                        var ctx = ctxs[infoHash] = new TorrentContext(infoHash, parsed.info);
+                        parsed.announce.forEach(function(ts) {
+                            ctx.addTrackerGroup(ts);
+                        });
+
+                        // ctx.on('end', function() {
+                        //     delete ctxs[parsed.infoHash];
+                        // });
+
+                    } else if (infoHash) {
+                        /* Ignore existing */
+                    } else {
+                        throw new Error("No infoHash");
+                    }
+                } catch (e) {
+                    return cb(e);
+                }
+                cb(null, infoHash);
+            } else {
+                cb(new Error("HTTP " + res.statusCode));
+            }
+        });
     } else {
-        console.log("Ignoring url", url)
-        cb(new Error("Ignored"));
+        cb(new Error("Invalid URL"));
     }
 }
 
@@ -50,6 +106,7 @@ app.post('/torrents', function(req, res) {
     var url = req.body.url;
     loadUrl(url, function(err, infoHash) {
         if (err) {
+            console.error(err.stack || err);
             res.status(500);
             res.send(err.message);
             return;
@@ -84,6 +141,7 @@ app.get('/torrents/:infoHash', function(req, res) {
         if (ctx.storage) {
             result.files = ctx.storage.files;
             result.totalLength = ctx.totalLength;
+            console.log("totalLength", result.totalLength);
         }
         res.json(result);
     } else {
