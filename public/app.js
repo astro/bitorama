@@ -40,6 +40,10 @@ app.config(function($locationProvider, $routeProvider) {
             templateUrl: 'partials/torrents.html',
             controller: 'TorrentsController'
         }).
+        when('/torrents/:infoHash', {
+            templateUrl: 'partials/torrent.html',
+            controller: 'TorrentController'
+        }).
         otherwise({
             redirectTo: '/torrents'
         });
@@ -127,7 +131,10 @@ app.controller('TorrentsController', function($scope, httpPoll) {
     }));
 });
 
-app.controller('TorrentsTorrentController', function($scope, httpPoll) {
+function torrentController($scope, $routeParams, httpPoll) {
+    if (!$scope.infoHash) {
+        $scope.infoHash = $routeParams.infoHash;
+    }
     $scope.torrent = {};
 
     $scope.$on('$destroy', httpPoll('/torrents/' + $scope.infoHash, function(result) {
@@ -137,6 +144,11 @@ app.controller('TorrentsTorrentController', function($scope, httpPoll) {
             }
         }
 
+        if ($scope.torrent.files) {
+            $scope.torrent.files.forEach(function(file) {
+                file.href = "/" + $scope.infoHash + "/" + file.name;
+            });
+        }
         if (!$scope.downloadSpeedAvg) {
             $scope.downloadSpeedAvg = $scope.torrent.downloadSpeed;
         } else {
@@ -176,5 +188,26 @@ app.controller('TorrentsTorrentController', function($scope, httpPoll) {
             s = lpad(h, 2, "0") + ":" + s;
         }
         return s;
+    };
+}
+
+app.controller('TorrentsTorrentController', torrentController);
+app.controller('TorrentController', torrentController);
+
+app.controller('TorrentFilesController', function($scope, httpPoll) {
+    var rmHttpPoll = httpPoll('/torrents/' + $scope.infoHash + '/files', function(result) {
+        if (result && result.length > 0) {
+            rmHttpPoll();
+            $scope.files = result;
+        }
+    });
+    $scope.$on('$destroy', rmHttpPoll);
+});
+app.controller('TorrentFileController', function($scope, httpPoll) {
+    $scope.canPlay = function() {
+        return /^video\//.test($scope.file.mime);
+    };
+    $scope.canView = function() {
+        return /^image\//.test($scope.file.mime);
     };
 });

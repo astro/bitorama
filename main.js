@@ -139,11 +139,21 @@ app.get('/torrents/:infoHash', function(req, res) {
             result.left = ctx.validator.getBytesLeft();
         }
         if (ctx.storage) {
-            result.files = ctx.storage.files;
             result.totalLength = ctx.totalLength;
-            console.log("totalLength", result.totalLength);
         }
         res.json(result);
+    } else {
+        res.status(500);
+        res.send("No such torrent");
+    }
+});
+
+app.get('/torrents/:infoHash/files', function(req, res) {
+    var infoHash = req.params.infoHash;
+
+    if (infoHash && ctxs.hasOwnProperty(infoHash)) {
+        var ctx = ctxs[infoHash];
+        res.json(ctx.storage ? ctx.storage.files : []);
     } else {
         res.status(500);
         res.send("No such torrent");

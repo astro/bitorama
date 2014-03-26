@@ -1,0 +1,32 @@
+<article class="torrent">
+  <h2>
+    {{torrent.name}}
+  </h2>
+  <p ng-show="torrent.totalLength">
+    {{percentDone()}}% of {{torrent.totalLength | humanSize}},
+    ETA: {{eta()}}
+    <span class="upspeed">{{torrent.uploadSpeed | humanSize}}/s up</span>
+    <span class="downspeed">{{torrent.downloadSpeed | humanSize}}/s down</span>
+  </p>
+  <ul ng-show="files"
+      ng-controller="TorrentFilesController" 
+      class="files">
+    <li ng-repeat="file in files"
+        ng-controller="TorrentFileController">
+      <div>
+        <a href="{{file.href}}">{{file.name}}</a>
+        <span class="size">{{file.length | humanSize}}</span>
+      </div>
+      <div class="play-container" ng-show="canPlay()">
+        <button ng-hide="isPlaying" ng-click="isPlaying = true">Play</button>
+        <video ng-show="isPlaying">
+          <source src="{{file.href}}">
+        </video>
+      </div>
+      <div class="view-container" ng-show="canView()">
+        <button ng-hide="isViewing" ng-click="isViewing = true">View</button>
+        <img ng-show="isViewing" src="{{file.href}}">
+      </div>
+    </li>
+  </ul>
+</article>
