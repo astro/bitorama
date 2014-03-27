@@ -72,7 +72,10 @@ function loadUrl(url, cb) {
                     if (infoHash && !ctxs.hasOwnProperty(infoHash)) {
                         var ctx = ctxs[infoHash] = new TorrentContext(infoHash, parsed.info);
                         parsed.announce.forEach(function(ts) {
-                            ctx.addTrackerGroup(ts);
+                            var urls = ts.map(function(t) {
+                                return t.toString();
+                            });
+                            ctx.addTrackerGroup(urls);
                         });
 
                         // ctx.on('end', function() {
