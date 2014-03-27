@@ -153,9 +153,40 @@ app.get('/torrents/:infoHash/files', function(req, res) {
 
     if (infoHash && ctxs.hasOwnProperty(infoHash)) {
         var ctx = ctxs[infoHash];
-        res.json(ctx.storage ? ctx.storage.files : []);
+        var files =
+            (ctx.storage ? ctx.storage.files : [])
+            .map(function(file) {
+                file.href = '/torrents/' + infoHash + '/files/' + file.name;
+                return file;
+            });
+        res.json(files);
     } else {
-        res.status(500);
+        res.status(404);
+        res.send("No such torrent");
+    }
+});
+
+app.get('/torrents/:infoHash/files/:fileName*', function(req, res) {
+    var infoHash = req.params.infoHash;
+    var fileName = req.params.fileName;
+
+
+    if (infoHash && ctxs.hasOwnProperty(infoHash)) {
+        var ctx = ctxs[infoHash];
+        // TODO: Range:/206
+        var stream = ctx.streamFile(fileName, 0, undefined);
+
+        if (stream) {
+            res.writeHead(200, {
+                'Content-Type': stream.mime
+            });
+            stream.pipe(res);
+        } else {
+            res.status(404);
+            res.send("No such file in torrent");
+        }
+    } else {
+        res.status(404);
         res.send("No such torrent");
     }
 });
