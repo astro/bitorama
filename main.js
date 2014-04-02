@@ -159,7 +159,7 @@ app.get('/torrents/:infoHash/files', function(req, res) {
         var files =
             (ctx.storage ? ctx.storage.files : [])
             .map(function(file) {
-                file.href = '/torrents/' + infoHash + '/files/' + file.name;
+                file.href = '/torrents/' + infoHash + '/files/' + encodeURIComponent(file.name);
                 return file;
             });
         res.json(files);
@@ -172,17 +172,43 @@ app.get('/torrents/:infoHash/files', function(req, res) {
 app.get('/torrents/:infoHash/files/:fileName*', function(req, res) {
     var infoHash = req.params.infoHash;
     var fileName = req.params.fileName;
+    console.log("fileName", fileName);
 
+    var offset = 0;
+    var length;
+    var range = req.headers.range;
+    var m;
+    if (range &&
+        (m = range.match(/^bytes=(\d+)-(\d+)/))) {
+        offset = parseInt(m[1], 10);
+        length = parseInt(m[2], 10) - offset + 1;
+    } else if (range &&
+               (m = range.match(/^bytes=(\d+)/))) {
+        offset = parseInt(m[1], 10);
+    }
+    console.log("range", range, "offset", offset, "length", length);
 
     if (infoHash && ctxs.hasOwnProperty(infoHash)) {
         var ctx = ctxs[infoHash];
-        // TODO: Range:/206
-        var stream = ctx.streamFile(fileName, 0, undefined);
+        var stream = ctx.streamFile(fileName, offset, length);
 
         if (stream) {
-            res.writeHead(200, {
-                'Content-Type': stream.mime
-            });
+            if (!range || (offset === 0 && isNaN(length))) {
+                res.writeHead(200, {
+                    'Content-Type': stream.mime,
+                    'Content-Length': stream.fileLength,
+                    'Accept-Ranges': 'bytes'
+                });
+            } else {
+                res.writeHead(206, {
+                    'Content-Type': stream.mime,
+                    'Content-Range': offset + "-" + (offset + stream.length - 1) + "/" + stream.fileLength,
+                    'Accept-Ranges': 'bytes'
+                });
+            }
+            /* Flush header */
+            // res.write("");
+            /* Begin streaming */
             stream.pipe(res);
         } else {
             res.status(404);
