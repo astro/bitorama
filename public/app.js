@@ -88,7 +88,7 @@ app.factory('httpPoll', function($http, $timeout) {
         }
         urlCbs[url].push(cb);
 
-        return function remove() {
+        return function() {
             urlCbs[url] = urlCbs[url].filter(function(cb1) {
                 return cb !== cb1;
             });
@@ -204,10 +204,13 @@ app.controller('TorrentFilesController', function($scope, httpPoll) {
     $scope.$on('$destroy', rmHttpPoll);
 });
 app.controller('TorrentFileController', function($scope, httpPoll) {
-    $scope.canPlay = function() {
+    $scope.canPlayVideo = function() {
         return /^video\//.test($scope.file.mime);
     };
-    $scope.canView = function() {
+    $scope.canPlayAudio = function() {
+        return /^audio\//.test($scope.file.mime);
+    };
+    $scope.canViewImage = function() {
         return /^image\//.test($scope.file.mime);
     };
 });

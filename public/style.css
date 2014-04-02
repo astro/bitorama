@@ -81,3 +81,8 @@ nav ul li {
 .torrent .files .size {
   color: #888;
 }
+
+.play-container video, .play-container audio, .view-container img {
+  max-width: 100%;
+  margin: 0.2em auto;
+}

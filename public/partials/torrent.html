@@ -17,15 +17,22 @@
         <a href="{{file.href}}">{{file.name}}</a>
         <span class="size">{{file.length | humanSize}}</span>
       </div>
-      <div class="play-container" ng-show="canPlay()">
-        <button ng-hide="isPlaying" ng-click="isPlaying = true">Play</button>
-        <video ng-show="isPlaying">
+      <!-- TODO: avoid loading when not playing -->
+      <div class="play-container" ng-if="canPlayVideo()">
+        <button ng-hide="isPlayingVideo" ng-click="isPlayingVideo = true">Play</button>
+        <video ng-if="isPlayingVideo" controls autoplay>
           <source src="{{file.href}}">
         </video>
       </div>
-      <div class="view-container" ng-show="canView()">
-        <button ng-hide="isViewing" ng-click="isViewing = true">View</button>
-        <img ng-show="isViewing" src="{{file.href}}">
+      <div class="play-container" ng-if="canPlayAudio()">
+        <button ng-hide="isPlayingAudio" ng-click="isPlayingAudio = true">Play</button>
+        <audio ng-if="isPlayingAudio" controls autoplay>
+          <source src="{{file.href}}">
+        </audio>
+      </div>
+      <div class="view-container" ng-if="canViewImage()">
+        <button ng-hide="isViewingImage" ng-click="isViewingImage = true">View</button>
+        <img ng-if="isViewingImage" src="{{file.href}}">
       </div>
     </li>
   </ul>
