@@ -11,7 +11,6 @@ function MockStorage() {
     this.data = new Buffer(DATA);
 }
 
-MockStorage.prototype.pieceLength = 4;
 MockStorage.prototype.length = DATA.length;
 
 MockStorage.prototype.read = function(offset, length, cb) {
@@ -23,10 +22,11 @@ test('streams all data', function (t) {
 
     var storage = new MockStorage();
     var validator = new process.EventEmitter();
+    validator.pieceLength = 4;
     validator.isPieceComplete = function(index) {
         return true;
     };
-    var stream = new FileStream(validator, storage, storage.pieceLength, 0, storage.length);
+    var stream = new FileStream(validator, storage, 0, storage.length);
     var bufs = [];
     stream.on('data', function(data) {
         bufs.push(data);
@@ -37,11 +37,32 @@ test('streams all data', function (t) {
     });
 });
 
+test('streams partial data', function (t) {
+    t.plan(1);
+
+    var storage = new MockStorage();
+    var validator = new process.EventEmitter();
+    validator.pieceLength = 4;
+    validator.isPieceComplete = function(index) {
+        return true;
+    };
+    var stream = new FileStream(validator, storage, 2, 4);
+    var bufs = [];
+    stream.on('data', function(data) {
+        bufs.push(data);
+    });
+    stream.on('end', function() {
+        var buf = Buffer.concat(bufs);
+        t.equal(new Buffer(DATA).slice(2, 6).toString('hex'), buf.toString('hex'));
+    });
+});
+
 test('streams data when it becomes available', function (t) {
     t.plan(1);
 
     var storage = new MockStorage();
     var validator = new process.EventEmitter();
+    validator.pieceLength = 4;
     var complete = {};
     validator.isPieceComplete = function(index) {
         return complete[index];
@@ -50,7 +71,7 @@ test('streams data when it becomes available', function (t) {
         complete[index] = true;
         validator.emit('piece:complete', index);
     }
-    var stream = new FileStream(validator, storage, storage.pieceLength, 0, 16);
+    var stream = new FileStream(validator, storage, 0, 16);
     var bufs = [];
     stream.on('data', function(data) {
         bufs.push(data);
