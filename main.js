@@ -135,9 +135,10 @@ app.get('/torrents/:infoHash', function(req, res) {
             downloadSpeed: ctx.swarm.downloadSpeed(),
             uploadSpeed: ctx.swarm.uploadSpeed()
         };
-        if (ctx.info && ctx.info.name) {
-            result.name = ctx.info.name.toString();
-        }
+        result.name =
+            (ctx.info && ctx.info.name) ?
+            ctx.info.name.toString() :
+            infoHash;
         if (ctx.validator) {
             result.left = ctx.validator.getBytesLeft();
         }
