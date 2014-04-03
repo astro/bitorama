@@ -197,14 +197,14 @@ app.get('/torrents/:infoHash/files/:fileName*', function(req, res) {
             if (!range || (offset === 0 && isNaN(length))) {
                 res.writeHead(200, {
                     'Content-Type': stream.mime,
-                    'Content-Length': stream.fileLength,
+                    'Content-Length': stream.length,
                     'Accept-Ranges': 'bytes'
                 });
             } else {
                 res.writeHead(206, {
                     'Content-Type': stream.mime,
-                    'Content-Range': offset + "-" + (offset + stream.length - 1) + "/" + stream.fileLength,
-                    'Accept-Ranges': 'bytes'
+                    'Content-Length': stream.length,
+                    'Content-Range': 'bytes ' + offset + "-" + (offset + stream.length - 1) + "/" + stream.fileLength
                 });
             }
             /* Flush header */
