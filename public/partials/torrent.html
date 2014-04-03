@@ -8,15 +8,19 @@
     <span class="upspeed">{{torrent.uploadSpeed | humanSize}}/s up</span>
     <span class="downspeed">{{torrent.downloadSpeed | humanSize}}/s down</span>
   </p>
+  <p ng-if="torrent.requests">
+     Pending {{torrent.requests}} requests to {{torrent.unchoked}}/{{torrent.peers}} peers
+  </p>
   <ul ng-show="files"
       ng-controller="TorrentFilesController" 
       class="files">
     <li ng-repeat="file in files"
         ng-controller="TorrentFileController">
-      <div>
+      <p>
         <a href="{{file.href}}">{{file.name}}</a>
         <span class="size">{{file.length | humanSize}}</span>
-      </div>
+      </p>
+      <p>
       <!-- TODO: avoid loading when not playing -->
       <div class="play-container" ng-if="canPlayVideo()">
         <button ng-hide="isPlayingVideo" ng-click="isPlayingVideo = true">Play</button>

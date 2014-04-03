@@ -130,6 +130,17 @@ app.get('/torrents/:infoHash', function(req, res) {
         if (ctx.storage) {
             result.totalLength = ctx.totalLength;
         }
+        result.peers = ctx.swarm.wires.length;
+        result.unchoked = ctx.swarm.wires.filter(function(wire) {
+            return !wire.peerChoking;
+        }).length;
+        if (ctx.download) {
+            result.pieces = ctx.download.pieces.length;
+        }
+        result.requests = 0;
+        ctx.swarm.wires.forEach(function(wire) {
+            result.requests += wire.requests.length;
+        });
         res.json(result);
     } else {
         res.status(500);

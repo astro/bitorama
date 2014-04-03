@@ -138,6 +138,7 @@ function torrentController($scope, $routeParams, httpPoll) {
     $scope.torrent = {};
 
     $scope.$on('$destroy', httpPoll('/torrents/' + $scope.infoHash, function(result) {
+        // TODO: torrent doesn't exist? redirect to torrents
         for(k in result) {
             if (result.hasOwnProperty(k)) {
                 $scope.torrent[k] = result[k];
