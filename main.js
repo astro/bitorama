@@ -6,28 +6,13 @@ var request = require('request');
 var bncode = require('bncode');
 var Magnet = require('magnet-uri');
 var TorrentContext = require('./lib/torrent_context');
+var parseTorrent = require('parse-torrent');
 
 
 process.on('uncaughtException', function(e) {
     console.error(e.stack);
 });
 
-
-function parseTorrent(data) {
-    var torrent = bncode.decode(data);
-    console.log("decoded", torrent);
-    var info = torrent.info;
-    var announceList =
-        torrent['announce-list'] ||
-        [[torrent['announce']]];
-    var sha1 = crypto.createHash('sha1');
-    sha1.update(bncode.encode(info));
-    return {
-        info: info,
-        infoHash: sha1.digest('hex'),
-        announce: announceList
-    };
-}
 
 var ctxs = {};
 
@@ -71,7 +56,7 @@ function loadUrl(url, cb) {
 
                     if (infoHash && !ctxs.hasOwnProperty(infoHash)) {
                         var ctx = ctxs[infoHash] = new TorrentContext(infoHash, parsed.info);
-                        parsed.announce.forEach(function(ts) {
+                        parsed.announceList.forEach(function(ts) {
                             var urls = ts.map(function(t) {
                                 return t.toString();
                             });
